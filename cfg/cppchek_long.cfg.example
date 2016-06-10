@@ -1,0 +1,51 @@
+NAME{cppcheck}
+DESCRIPTION{
+Cppcheck is a static analysis tool for C/C++ code. Unlike C/C++ compilers and many other 
+analysis tools it does not detect syntax errors in the code. Cppcheck primarily detects 
+the types of bugs that the compilers normally do not detect. The goal is to detect only 
+real errors in the code (i.e. have zero false positives). 
+}
+ID{cppcheck}
+TYPE{1}
+_STD{c99}
+ARCH{
+32=__i386__
+64=__x86_64__
+DEFAULT=__x86_64__
+}
+PLAT{
+linux32=unix32
+linux64=unix64
+DEFAULT=unix64
+}
+OPTIONS{
+--std=$STD
+--template="{file}|{line}|{severity}|{id}|{message}"
+-D$ARCH 
+--language=$LANG
+--platform=$PLAT
+--enable=warning,style,performance,unusedFunction
+}
+LANG{
+C=c cc h 
+C++=cpp c++ cxx hpp
+DEFAULT=C
+}
+RESULT{
+:FILE
+:LINE
+:SEV
+:ID
+:MESSAGE
+DELIMIT=|
+STREAM=stderr
+LOW=none,style,information,portability
+MEDIUM=warning,performance
+HIGH=error,preprocessorerrordirective
+}
+DEFS{-D$:}
+INCLUDES{-I$:}
+FILENAME{$FILE}
+CMD{
+/usr/bin/cppcheck $OPTIONS $INCLUDES $DEFS $CUSTOMDEFS $CUSTOMINCLUDES $FILENAME
+}
