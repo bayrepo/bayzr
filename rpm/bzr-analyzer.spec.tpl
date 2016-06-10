@@ -13,7 +13,7 @@ Summary:        The tool for simplification of using some code static analyzers 
 License: GPLv3
 Group: Development/Languages
 Source0: %{name}-%{version}.tar.gz
-URL: https://security.web.cern.ch/security/recommendations/en/codetools/rats.shtml
+URL: http://wiki.bayrepo.net
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: golang >= 1.6.2
