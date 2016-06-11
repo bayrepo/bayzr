@@ -64,7 +64,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc %{_datadir}/doc/%{pkgname}/LICENSE %{_datadir}/doc/%{pkgname}/COPYRIGHT
+%doc %{_datadir}/doc/%{pkgname}/LICENSE 
+%doc %{_datadir}/doc/%{pkgname}/COPYRIGHT
 %{_bindir}/bayzr
 %config(noreplace) %{_sysconfdir}/bzr.conf
 %config(noreplace) %{_sysconfdir}/bzr.d/*.conf
