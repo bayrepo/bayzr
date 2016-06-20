@@ -1,5 +1,5 @@
 //    BayZR - utility for managing set of static analysis tools
-//    Copyright (C) 2016  Alexey Berezhok 
+//    Copyright (C) 2016  Alexey Berezhok
 //    e-mail: bayrepo.info@gmail.com
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -310,7 +310,11 @@ func makeStringAnalysis(line string, storage *OutPutAnalyzerContainer) {
 				storage.filesList[f].IncludesList = append(storage.filesList[f].IncludesList, getIncOnly(def_values)...)
 				if dir_name == "." {
 					if path.Dir(f) == "." {
-						storage.filesList[f].Dir = dir_name
+						if currentPath, err := os.Getwd(); err == nil {
+							storage.filesList[f].Dir = currentPath
+						} else {
+							storage.filesList[f].Dir = dir_name
+						}
 					} else {
 						storage.filesList[f].Dir = path.Dir(f)
 					}
@@ -339,7 +343,11 @@ func makeStringAnalysis(line string, storage *OutPutAnalyzerContainer) {
 					}
 				}
 				if path.Dir(f) == "." {
-					storage.filesList[f].Dir = dir_name
+					if currentPath, err := os.Getwd(); err == nil {
+						storage.filesList[f].Dir = currentPath
+					} else {
+						storage.filesList[f].Dir = dir_name
+					}
 				} else {
 					storage.filesList[f].Dir = path.Dir(f)
 				}

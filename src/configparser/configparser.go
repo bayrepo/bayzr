@@ -1,5 +1,5 @@
 //    BayZR - utility for managing set of static analysis tools
-//    Copyright (C) 2016  Alexey Berezhok 
+//    Copyright (C) 2016  Alexey Berezhok
 //    e-mail: bayrepo.info@gmail.com
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -43,6 +43,7 @@ type ConfigparserContainer struct {
 	html_template   string              //default empty
 	fnd_path        []string            //only global option not set in config file
 	cc_replacer     bool                //use CC, CXX replace or just analyze output
+	list_of_files   []string            //list of files to output
 }
 
 /*
@@ -146,7 +147,7 @@ func CreateDefaultConfig() *ConfigparserContainer {
 		[]string{"/usr/bin/bash", "-c"},
 		true, []string{}, string("custom"),
 		string("FILE|LINE|SEV|ID|MESSAGE"), 10, []string{}, []string{}, string("report.log"),
-		"", []string{}, false}
+		"", []string{}, false, []string{"*"}}
 }
 
 /*
@@ -209,8 +210,7 @@ func (storage *ConfigparserContainer) ReadConfig(configName string) error {
 							}
 							if section == "plugins" {
 								if section_key == "checkby" {
-									storage.checkby = append(storage.checkby,
-										SplitOwn(strings.Trim(matches[2], " \n\t"))...)
+									storage.checkby = SplitOwn(strings.Trim(matches[2], " \n\t"))
 								}
 								if section_key == "output" {
 									storage.output = strings.ToLower(strings.Trim(matches[2], " \n\t"))
@@ -243,6 +243,7 @@ func (storage *ConfigparserContainer) ReadConfig(configName string) error {
 	}
 	storage.compilatorsList = RemoveDuplicate(storage.compilatorsList)
 	storage.extList = RemoveDuplicate(storage.extList)
+	storage.checkby = RemoveDuplicate(storage.checkby)
 	for key := range storage.addParameters {
 		storage.addParameters[key] = RemoveDuplicate(storage.addParameters[key])
 	}
@@ -350,4 +351,22 @@ func (storage ConfigparserContainer) RetFndPath() []string {
 
 func (storage ConfigparserContainer) Replacer() bool {
 	return storage.cc_replacer
+}
+
+func (storage *ConfigparserContainer) SetFilesList(list string) {
+	storage.list_of_files = append(storage.list_of_files,
+		SplitOwn(strings.Trim(list, " \n\t"))...)
+}
+
+func (storage ConfigparserContainer) CheckFile(file string) bool {
+	for _, f_item := range storage.list_of_files {
+		if f_item == "*" {
+			return true
+		} else {
+			if strings.Contains(file, f_item) == true {
+				return true
+			}
+		}
+	}
+	return false
 }

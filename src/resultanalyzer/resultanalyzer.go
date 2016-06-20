@@ -1,5 +1,5 @@
 //    BayZR - utility for managing set of static analysis tools
-//    Copyright (C) 2016  Alexey Berezhok 
+//    Copyright (C) 2016  Alexey Berezhok
 //    e-mail: bayrepo.info@gmail.com
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -142,6 +142,9 @@ func (this *ResultAnalyzerConatiner) makeStringAnalysis(line string) {
 
 			if item.Message != "" || item.Id != "" || item.Sev != "" {
 				path_to_file_f_, err := filepath.Abs(item.File)
+				if err == nil {
+					item.File = path_to_file_f_
+				}
 				if strings.HasPrefix(path_to_file_f_, this.home_dir) == true && err == nil {
 					if this.chk.GetType() == "1" {
 						this.result_array = append(this.result_array, item)

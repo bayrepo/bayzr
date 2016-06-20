@@ -38,6 +38,7 @@ var versionFlag *bool
 var configFile string
 var listOfPlugins *bool
 var useOnlyLocalFiles *bool
+var listOfOutputFiles string
 
 const (
 	config_file_name = "bzr.conf"
@@ -62,6 +63,7 @@ func init() {
 	flag.StringVar(&configFile, "config", defaultFile, defaultFileusage)
 	listOfPlugins = flag.Bool("list", false, "Show list of available plugins")
 	useOnlyLocalFiles = flag.Bool("not-only-local", false, "Show in result errors not only for project files")
+	flag.StringVar(&listOfOutputFiles, "files", "*", "List of files should be inserted to report or * for all files(by dafault)")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("    bay [options] cmd ...\n")
@@ -84,7 +86,7 @@ func main() {
 	current_analyzer_path := "/"
 
 	config := configparser.CreateDefaultConfig()
-	//ищем тсанлартный конфигурационный файл
+	//ищем стандартный конфигурационный файл
 	config.ReadConfig(configFile)
 	checker.MakePluginsList("/etc/" + plugin_dir)
 	config.AddFndPath("/etc/" + plugin_dir + "/")
@@ -146,7 +148,7 @@ func main() {
 	if err = analyzer.ExcecuteComplilationProcess(cmd_mod_); err != nil {
 		fmt.Println(err)
 	}
-
+	
 	fmt.Println("--------------------Process of source analyzing is begun-----------------------------")
 
 	list_of_result := []*resultanalyzer.ResultAnalyzerConatiner{}
@@ -217,6 +219,8 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	
+	config.SetFilesList(listOfOutputFiles)
 
 	report := reporter.Make_ReporterContainer(config, &list_of_result)
 	if path, fnd := report.CreateReport(); fnd == true {

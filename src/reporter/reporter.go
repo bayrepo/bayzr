@@ -1,5 +1,5 @@
 //    BayZR - utility for managing set of static analysis tools
-//    Copyright (C) 2016  Alexey Berezhok 
+//    Copyright (C) 2016  Alexey Berezhok
 //    e-mail: bayrepo.info@gmail.com
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -115,6 +115,9 @@ func (this *ReporterContainer) rebuildListToMapList() {
 	this.err_list_files = map[string][]*ReporterContainerItem{}
 	for i := range this.err_list {
 		if isThereDisableCommet(this.err_list[i]) == true {
+			if this.config.CheckFile(this.err_list[i].File) == false {
+				continue
+			}
 			tmp, found := this.err_list_files[this.err_list[i].File]
 			if found == false {
 				tmp = []*ReporterContainerItem{}
@@ -185,19 +188,36 @@ func (this *ReporterContainer) saveAnalyzisInfoDirect(file_name string, report_t
 	old_plugin_name := ""
 	for _, value := range *this.list {
 		array_list, plugin_name := value.GetListOfErrors()
-		if old_plugin_name != plugin_name {
-			file.WriteString(plugin_name + "\n")
-			old_plugin_name = plugin_name
-		}
+
+		is_fnd_file := false
+
 		for _, message := range array_list {
 			if quickCommentAnalysis(message.File, message.Line) == true {
-				res := report_template
-				res = strings.Replace(res, "FILE", message.File, -1)
-				res = strings.Replace(res, "LINE", message.Line, -1)
-				res = strings.Replace(res, "SEV", message.Sev, -1)
-				res = strings.Replace(res, "ID", message.Id, -1)
-				res = strings.Replace(res, "MESSAGE", message.Message, -1)
-				file.WriteString(res + "\n")
+				if this.config.CheckFile(message.File) == true {
+					is_fnd_file = true
+					break
+				}
+			}
+		}
+
+		if is_fnd_file == true {
+			if old_plugin_name != plugin_name {
+				file.WriteString(plugin_name + "\n")
+				old_plugin_name = plugin_name
+			}
+			for _, message := range array_list {
+				if this.config.CheckFile(message.File) == false {
+					continue
+				}
+				if quickCommentAnalysis(message.File, message.Line) == true {
+					res := report_template
+					res = strings.Replace(res, "FILE", message.File, -1)
+					res = strings.Replace(res, "LINE", message.Line, -1)
+					res = strings.Replace(res, "SEV", message.Sev, -1)
+					res = strings.Replace(res, "ID", message.Id, -1)
+					res = strings.Replace(res, "MESSAGE", message.Message, -1)
+					file.WriteString(res + "\n")
+				}
 			}
 		}
 	}
