@@ -47,6 +47,7 @@ type ResultAnalyzerConatiner struct {
 	home_dir     string
 	garbade_list []string
 	mtx          sync.Mutex
+	config       configparser.ConfigparserContainer
 }
 
 func (this ResultAnalyzerConatinerItem) String() string {
@@ -58,8 +59,8 @@ func Make_ResultAnalyzerConatinerItem() *ResultAnalyzerConatinerItem {
 	return &ResultAnalyzerConatinerItem{}
 }
 
-func Make_ResultAnalyzerConatiner(fname string, chk_in *checker.PluginInfoDataContainer, home_d string) *ResultAnalyzerConatiner {
-	return &ResultAnalyzerConatiner{chk_in, []*ResultAnalyzerConatinerItem{}, fname, home_d, []string{}, sync.Mutex{}}
+func Make_ResultAnalyzerConatiner(fname string, chk_in *checker.PluginInfoDataContainer, home_d string, cfg configparser.ConfigparserContainer) *ResultAnalyzerConatiner {
+	return &ResultAnalyzerConatiner{chk_in, []*ResultAnalyzerConatinerItem{}, fname, home_d, []string{}, sync.Mutex{}, cfg}
 }
 
 var tmp_array []*ResultAnalyzerConatinerItem = []*ResultAnalyzerConatinerItem{}
@@ -145,7 +146,7 @@ func (this *ResultAnalyzerConatiner) makeStringAnalysis(line string) {
 				if err == nil {
 					item.File = path_to_file_f_
 				}
-				if strings.HasPrefix(path_to_file_f_, this.home_dir) == true && err == nil {
+				if strings.HasPrefix(path_to_file_f_, this.home_dir) == true && err == nil && this.config.CheckFile(item.File) == true {
 					if this.chk.GetType() == "1" {
 						this.result_array = append(this.result_array, item)
 					} else if this.chk.GetType() == "2" {

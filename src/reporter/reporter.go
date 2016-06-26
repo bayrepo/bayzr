@@ -115,9 +115,6 @@ func (this *ReporterContainer) rebuildListToMapList() {
 	this.err_list_files = map[string][]*ReporterContainerItem{}
 	for i := range this.err_list {
 		if isThereDisableCommet(this.err_list[i]) == true {
-			if this.config.CheckFile(this.err_list[i].File) == false {
-				continue
-			}
 			tmp, found := this.err_list_files[this.err_list[i].File]
 			if found == false {
 				tmp = []*ReporterContainerItem{}
@@ -209,6 +206,10 @@ func (this *ReporterContainer) saveAnalyzisInfoDirect(file_name string, report_t
 				if this.config.CheckFile(message.File) == false {
 					continue
 				}
+				if this.config.CheckFileLine(message.File, message.Line) == false {
+					continue
+				}
+
 				if quickCommentAnalysis(message.File, message.Line) == true {
 					res := report_template
 					res = strings.Replace(res, "FILE", message.File, -1)
@@ -259,6 +260,13 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 				fmt.Printf("Incorrect line number %s in file %s for message %s\n", message.Line, message.File, message.Message)
 				continue
 			}
+			if this.config.CheckFile(message.File) == false {
+				continue
+			}
+			if this.config.CheckFileLine(message.File, message.Line) == false {
+				continue
+			}
+
 			fnd := false
 			for key := range list {
 				for val := range list[key].List {

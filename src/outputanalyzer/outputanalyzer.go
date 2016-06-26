@@ -254,7 +254,13 @@ func GetFilesNames(args []string, storage *OutPutAnalyzerContainer) ([]string, b
 			}
 		}
 	}
-	return files_name, is_comp, is_fst_compil
+	var files_name_filtered []string = []string{}
+	for _, fname := range files_name {
+		if storage.config.CheckFile(fname) == true {
+			files_name_filtered = append(files_name_filtered, fname)
+		}
+	}
+	return files_name_filtered, is_comp, is_fst_compil
 }
 
 func makeStringAnalysis(line string, storage *OutPutAnalyzerContainer) {

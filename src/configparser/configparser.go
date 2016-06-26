@@ -28,22 +28,32 @@ import (
 )
 
 type ConfigparserContainer struct {
-	compilatorsList []string            //default compilator
-	extList         []string            //default extention
-	addParameters   map[string][]string //extended filename=params
-	bash            []string            //default bashcmd
-	showerroroutput bool                //default stderr = on/off
-	checkby         []string            //default empty
-	output          string              //default custom
-	template        string              //"FILE"|"LINE"|"SEV"|"ID"|"MESSAGE"
-	wrapstrings     int64               //default 10
-	ignore          []string            //default empty
-	glovaldefs      []string            //default empty
-	outputfile      string              //default report.log
-	html_template   string              //default empty
-	fnd_path        []string            //only global option not set in config file
-	cc_replacer     bool                //use CC, CXX replace or just analyze output
-	list_of_files   []string            //list of files to output
+	compilatorsList         []string                               //default compilator
+	extList                 []string                               //default extention
+	addParameters           map[string][]string                    //extended filename=params
+	bash                    []string                               //default bashcmd
+	showerroroutput         bool                                   //default stderr = on/off
+	checkby                 []string                               //default empty
+	output                  string                                 //default custom
+	template                string                                 //"FILE"|"LINE"|"SEV"|"ID"|"MESSAGE"
+	wrapstrings             int64                                  //default 10
+	ignore                  []string                               //default empty
+	glovaldefs              []string                               //default empty
+	outputfile              string                                 //default report.log
+	html_template           string                                 //default empty
+	fnd_path                []string                               //only global option not set in config file
+	cc_replacer             bool                                   //use CC, CXX replace or just analyze output
+	list_of_files           []string                               //list of files to output
+	list_of_files_lines_num map[string][]DiffAnalyzerContainer_x_y //string numbers and files to output
+}
+
+type DiffAnalyzerContainer_x_y struct {
+	Begin int64
+	End   int64
+}
+
+func (this DiffAnalyzerContainer_x_y) String() string {
+	return fmt.Sprintf("x: %d\ny: %d\n", this.Begin, this.End)
 }
 
 /*
@@ -70,7 +80,7 @@ func SplitOwnLongSep(data string, sep []string) []string {
 }
 
 /*
-* Внутрення функция, для разбивки строки на подстроки на основе множества разделителей
+* функция, для разбивки строки на подстроки на основе множества разделителей
 * из разделителей не удаляются ведущие и конечные экстра символы
  */
 func SplitOwnLongSepNoTrimSep(data string, sep []string) []string {
@@ -147,7 +157,7 @@ func CreateDefaultConfig() *ConfigparserContainer {
 		[]string{"/usr/bin/bash", "-c"},
 		true, []string{}, string("custom"),
 		string("FILE|LINE|SEV|ID|MESSAGE"), 10, []string{}, []string{}, string("report.log"),
-		"", []string{}, false, []string{"*"}}
+		"", []string{}, false, []string{"*"}, map[string][]DiffAnalyzerContainer_x_y{}}
 }
 
 /*
@@ -354,8 +364,12 @@ func (storage ConfigparserContainer) Replacer() bool {
 }
 
 func (storage *ConfigparserContainer) SetFilesList(list string) {
-	storage.list_of_files = append(storage.list_of_files,
-		SplitOwn(strings.Trim(list, " \n\t"))...)
+	storage.list_of_files = SplitOwn(strings.Trim(list, ",\n\t"))
+}
+
+func (storage *ConfigparserContainer) SetFilesList_list(list []string, line_list map[string][]DiffAnalyzerContainer_x_y) {
+	storage.list_of_files = list
+	storage.list_of_files_lines_num = line_list
 }
 
 func (storage ConfigparserContainer) CheckFile(file string) bool {
@@ -365,6 +379,26 @@ func (storage ConfigparserContainer) CheckFile(file string) bool {
 		} else {
 			if strings.Contains(file, f_item) == true {
 				return true
+			}
+		}
+	}
+	return false
+}
+
+func (storage ConfigparserContainer) CheckFileLine(file string, line_num string) bool {
+	if len(storage.list_of_files_lines_num) == 0 {
+		return true
+	}
+	numb, err := strconv.ParseInt(strings.Trim(line_num, " \n\t"), 10, 64)
+	if err != nil {
+		return true
+	}
+	for f_name, f_item := range storage.list_of_files_lines_num {
+		if strings.Contains(file, f_name) == true {
+			for _, value := range f_item {
+				if numb >= value.Begin && numb <= value.End {
+					return true
+				}
 			}
 		}
 	}

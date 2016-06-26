@@ -1,5 +1,5 @@
 //    BayZR - utility for managing set of static analysis tools
-//    Copyright (C) 2016  Alexey Berezhok 
+//    Copyright (C) 2016  Alexey Berezhok
 //    e-mail: bayrepo.info@gmail.com
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@ package main
 import (
 	"checker"
 	"configparser"
+	"diffanalyzer"
 	"flag"
 	"fmt"
 	"gccincludes"
@@ -39,6 +40,7 @@ var configFile string
 var listOfPlugins *bool
 var useOnlyLocalFiles *bool
 var listOfOutputFiles string
+var listOfDiffFiles string
 
 const (
 	config_file_name = "bzr.conf"
@@ -64,6 +66,7 @@ func init() {
 	listOfPlugins = flag.Bool("list", false, "Show list of available plugins")
 	useOnlyLocalFiles = flag.Bool("not-only-local", false, "Show in result errors not only for project files")
 	flag.StringVar(&listOfOutputFiles, "files", "*", "List of files should be inserted to report or * for all files(by dafault)")
+	flag.StringVar(&listOfDiffFiles, "diff", "", "List of patch file for get list of patched files")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("    bay [options] cmd ...\n")
@@ -108,7 +111,7 @@ func main() {
 	}
 	//дозаполняем дефолтными значениями если после чтения конфигурации ничего не нашлось
 	config.DefaultPropogate()
-	
+
 	analyzer := outputanalyzer.CreateDefaultAnalyzer(config)
 
 	if replace.IsReplaced() == true {
@@ -119,6 +122,15 @@ func main() {
 	if *listOfPlugins {
 		fmt.Println(checker.GetPluginContainerList())
 		os.Exit(0)
+	}
+
+	if len(listOfDiffFiles) > 0 {
+		patch_list := diffanalyzer.Make_DiffAnalyzerContainer()
+		patch_list.ParseFilesList(listOfDiffFiles)
+		files_from_patch, linenembers_form_patch := patch_list.GetFoundList()
+		config.SetFilesList_list(files_from_patch, linenembers_form_patch)
+	} else {
+		config.SetFilesList(listOfOutputFiles)
 	}
 
 	gcc := gccincludes.Make_GCCContainer()
@@ -148,7 +160,7 @@ func main() {
 	if err = analyzer.ExcecuteComplilationProcess(cmd_mod_); err != nil {
 		fmt.Println(err)
 	}
-	
+
 	fmt.Println("--------------------Process of source analyzing is begun-----------------------------")
 
 	list_of_result := []*resultanalyzer.ResultAnalyzerConatiner{}
@@ -170,13 +182,13 @@ func main() {
 						new_inccpp_list := append(gcc.GetCPP(), cpp_f)
 						file_name = outputanalyzer.TransformFileName(file_name, value.Dir)
 						if file_name == "" {
-						    continue
+							continue
 						}
 						if cmd, err := obj_item.GetPluginCMD(file_name, value.IncludesList, value.DefList, config, new_incc_list, new_inccpp_list, value.Raw); err != nil {
 							fmt.Println("Got error when cmd parsed ", err)
 							os.Exit(1)
 						} else {
-							result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(file_name, obj_item, current_analyzer_path)
+							result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(file_name, obj_item, current_analyzer_path, *config)
 							list_of_result = append(list_of_result, result_analyzer)
 							if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
 								fmt.Println("Got error when checker result parsed ", err)
@@ -205,7 +217,7 @@ func main() {
 				fmt.Println("Got error when cmd parsed ", err)
 				os.Exit(1)
 			} else {
-				result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(obj_item.GetName(), obj_item, current_analyzer_path)
+				result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(obj_item.GetName(), obj_item, current_analyzer_path, *config)
 				list_of_result = append(list_of_result, result_analyzer)
 				result_analyzer.MakePreCommand(config)
 				if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
@@ -219,8 +231,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	
-	config.SetFilesList(listOfOutputFiles)
 
 	report := reporter.Make_ReporterContainer(config, &list_of_result)
 	if path, fnd := report.CreateReport(); fnd == true {
