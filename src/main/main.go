@@ -69,7 +69,7 @@ func init() {
 	flag.StringVar(&listOfDiffFiles, "diff", "", "List of patch file for get list of patched files")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
-		fmt.Printf("    bay [options] cmd ...\n")
+		fmt.Printf("    bayzr [options] cmd ...\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
