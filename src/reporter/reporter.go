@@ -244,10 +244,34 @@ type MixedListItem struct {
 	level       int
 }
 
+type tMixedListItem []MixedListItem
+
+func (this tMixedListItem) Len() int {
+	return len(this)
+}
+
+func (this tMixedListItem) Less(i, j int) bool {
+	return this[i].Postion < this[j].Postion
+}
+
+func (this tMixedListItem) Swap(i, j int) {
+	this[i], this[j] = this[j], this[i]
+}
+
 type MixedList struct {
 	From int64
 	To   int64
-	List []MixedListItem
+	List tMixedListItem
+}
+
+func removeFromSlise(list []MixedList, key int) []MixedList {
+	if key == (len(list) - 1) {
+		return list[:key]
+	}
+	if key >= len(list) {
+		return list
+	}
+	return append(list[:key], list[key+1:]...)
 }
 
 func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
@@ -291,6 +315,7 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 				list = append(list, item)
 			}
 		}
+
 	}
 
 	for key := range list {
@@ -301,10 +326,10 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 			max := list[key].List[0].Postion
 			min := list[key].List[0].Postion
 			for val := range list[key].List {
-				if max > list[key].List[val].Postion {
+				if max < list[key].List[val].Postion {
 					max = list[key].List[val].Postion
 				}
-				if min < list[key].List[val].Postion {
+				if min > list[key].List[val].Postion {
 					min = list[key].List[val].Postion
 				}
 			}
@@ -312,6 +337,60 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 			list[key].To = max + wrap
 		}
 	}
+
+	//counter := 0
+
+	for {
+	//	counter += 1
+	//	for _, i := range list {
+	//		fmt.Printf("%d F:%d, T:%d\n", counter, i.From, i.To)
+	//	}
+
+		is_spare := false
+		for key := range list {
+			fnd := false
+			for key2 := range list {
+				if (key != key2) && ((list[key].To >= list[key2].From && list[key].From <= list[key2].From) ||
+					(list[key2].To >= list[key].From && list[key2].From <= list[key].From) ||
+					(list[key2].From >= list[key].From && list[key2].To <= list[key].To) ||
+					(list[key].From >= list[key2].From && list[key].To <= list[key2].To)) {
+
+	//				fmt.Printf("key %d F:%d, T:%d vs key %d F:%d, T:%d \n", key, list[key].From, list[key].To, key2, list[key2].From, list[key2].To)
+
+					list[key].List = append(list[key].List, list[key2].List...)
+					if list[key].From > list[key2].From {
+						list[key].From = list[key2].From
+					}
+					if list[key].To < list[key2].To {
+						list[key].To = list[key2].To
+					}
+					list = removeFromSlise(list, key2)
+					fnd = true
+					break
+				}
+			}
+			if fnd == true {
+				is_spare = true
+				break
+			}
+		}
+		if is_spare == false {
+			break
+		}
+	}
+
+	for key := range list {
+		if len(list[key].List) > 1 {
+			sort.Sort(list[key].List)
+		}
+	}
+
+	/*	for _, i := range list {
+		fmt.Printf("F:%d, T:%d\n", i.From, i.To)
+		for _, j := range i.List {
+			fmt.Printf("PLG %s Position %d %s\n", j.Plugin_name, j.Postion, j.Item.String())
+		}
+	}*/
 
 	return &list
 }

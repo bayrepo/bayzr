@@ -1,5 +1,5 @@
 //    BayZR - utility for managing set of static analysis tools
-//    Copyright (C) 2016  Alexey Berezhok 
+//    Copyright (C) 2016  Alexey Berezhok
 //    e-mail: bayrepo.info@gmail.com
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -568,6 +568,15 @@ func (obj *PluginInfoDataContainer) Parse(file_name string) error {
 	return fmt.Errorf("Unknown parsing error :(\n")
 }
 
+func checkPluginName(plg *PluginInfoDataContainer) bool {
+	for _, item := range listOfPlugins {
+		if item.GetName() == plg.GetName() {
+			return true
+		}
+	}
+	return false
+}
+
 func MakePluginsList(dir_to_find string) {
 	if info, err := os.Stat(dir_to_find); err == nil {
 		if info.IsDir() == true {
@@ -582,7 +591,19 @@ func MakePluginsList(dir_to_find string) {
 					file_name := dir_to_find + "/" + file.Name()
 					plg := pluginInfoDataContainer_make()
 					if err := plg.Parse(file_name); err == nil {
+						if checkPluginName(plg) == true {
+							var listOfPlugins_tmp []*PluginInfoDataContainer
+							for _, item := range listOfPlugins {
+								if item.GetName() == plg.GetName() {
+									continue
+								} else {
+									listOfPlugins_tmp = append(listOfPlugins_tmp, plg)
+								}
+							}
+							listOfPlugins = listOfPlugins_tmp
+						}
 						listOfPlugins = append(listOfPlugins, plg)
+
 					} else {
 						fmt.Printf("Error %s in pasing of file %s\n", err, file_name)
 					}
