@@ -1,3 +1,6 @@
+* Sun Aug 07 2016 Alexey Berezhok <bayrepo.info@gmail.com> 0.1-6
+- Added frama-c support
+
 * Sat Jul 23 2016 Alexey Berezhok <bayrepo.info@gmail.com> 0.1-5
 - Fixed bug when not all error caught by reported
 

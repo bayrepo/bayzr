@@ -96,11 +96,12 @@ func (this ReporterContainerItem) String() string {
 }
 
 type ReporterContainer struct {
-	config         *configparser.ConfigparserContainer
-	list           *[]*resultanalyzer.ResultAnalyzerConatiner
-	err_list       []*ReporterContainerItem
-	err_list_files map[string][]*ReporterContainerItem
-	err_list_names []string
+	config           *configparser.ConfigparserContainer
+	list             *[]*resultanalyzer.ResultAnalyzerConatiner
+	err_list         []*ReporterContainerItem
+	err_list_files   map[string][]*ReporterContainerItem
+	err_list_names   []string
+	list_of_commands map[string][]string
 }
 
 func (this *ReporterContainer) String() string {
@@ -128,8 +129,8 @@ func (this *ReporterContainer) rebuildListToMapList() {
 	sort.Strings(this.err_list_names)
 }
 
-func Make_ReporterContainer(conf *configparser.ConfigparserContainer, lst *[]*resultanalyzer.ResultAnalyzerConatiner) *ReporterContainer {
-	return &ReporterContainer{conf, lst, []*ReporterContainerItem{}, map[string][]*ReporterContainerItem{}, []string{}}
+func Make_ReporterContainer(conf *configparser.ConfigparserContainer, lst *[]*resultanalyzer.ResultAnalyzerConatiner, list_of_cmds map[string][]string) *ReporterContainer {
+	return &ReporterContainer{conf, lst, []*ReporterContainerItem{}, map[string][]*ReporterContainerItem{}, []string{}, list_of_cmds}
 }
 
 func quickCommentAnalysis(fn string, line_in string) bool {
@@ -341,10 +342,10 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 	//counter := 0
 
 	for {
-	//	counter += 1
-	//	for _, i := range list {
-	//		fmt.Printf("%d F:%d, T:%d\n", counter, i.From, i.To)
-	//	}
+		//	counter += 1
+		//	for _, i := range list {
+		//		fmt.Printf("%d F:%d, T:%d\n", counter, i.From, i.To)
+		//	}
 
 		is_spare := false
 		for key := range list {
@@ -355,7 +356,7 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 					(list[key2].From >= list[key].From && list[key2].To <= list[key].To) ||
 					(list[key].From >= list[key2].From && list[key].To <= list[key2].To)) {
 
-	//				fmt.Printf("key %d F:%d, T:%d vs key %d F:%d, T:%d \n", key, list[key].From, list[key].To, key2, list[key2].From, list[key2].To)
+					//				fmt.Printf("key %d F:%d, T:%d vs key %d F:%d, T:%d \n", key, list[key].From, list[key].To, key2, list[key2].From, list[key2].To)
 
 					list[key].List = append(list[key].List, list[key2].List...)
 					if list[key].From > list[key2].From {
@@ -609,6 +610,14 @@ func (this *ReporterContainer) saveAnalyzisInfoDirectTxt(file_name string) {
 		os.Exit(1)
 	}
 	defer file.Close()
+	for plugin_name, plugin_commands := range this.list_of_commands {
+		file.WriteString("Commands for plugin " + plugin_name + "\n")
+		file.WriteString("--------------------------------------------------------------------------\n")
+		for _, cmd_string := range plugin_commands {
+			file.WriteString(cmd_string + "\n")
+		}
+		file.WriteString("\n\n")
+	}
 	this.rebuildListToMapList()
 	for _, file_nm := range this.err_list_names {
 		file.WriteString(file_nm + "\n")
@@ -672,4 +681,8 @@ func (this *ReporterContainer) CreateReport() (string, bool) {
 
 func (this *ReporterContainer) GetErrList() *map[string][]*ReporterContainerItem {
 	return &this.err_list_files
+}
+
+func (this *ReporterContainer) GetCmdList() map[string][]string {
+	return this.list_of_commands
 }

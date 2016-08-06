@@ -41,6 +41,7 @@ var listOfPlugins *bool
 var useOnlyLocalFiles *bool
 var listOfOutputFiles string
 var listOfDiffFiles string
+var printAnalizerCommands *bool
 
 const (
 	config_file_name = "bzr.conf"
@@ -67,6 +68,7 @@ func init() {
 	useOnlyLocalFiles = flag.Bool("not-only-local", false, "Show in result errors not only for project files")
 	flag.StringVar(&listOfOutputFiles, "files", "*", "List of files should be inserted to report or * for all files(by dafault)")
 	flag.StringVar(&listOfDiffFiles, "diff", "", "List of patch file for get list of patched files")
+	printAnalizerCommands = flag.Bool("debug-commands", false, "Show list of generated static analizers options and commands")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("    bayzr [options] cmd ...\n")
@@ -78,6 +80,7 @@ func init() {
 func main() {
 
 	var err error
+	var list_of_analyzer_commands map[string][]string = map[string][]string{}
 
 	if *versionFlag {
 		fmt.Println("Version:", APP_VERSION)
@@ -190,6 +193,12 @@ func main() {
 						} else {
 							result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(file_name, obj_item, current_analyzer_path, *config)
 							list_of_result = append(list_of_result, result_analyzer)
+							if *printAnalizerCommands == true {
+								if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
+									list_of_analyzer_commands[obj_item.GetName()] = []string{}
+								}
+								list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+							}
 							if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
 								fmt.Println("Got error when checker result parsed ", err)
 								os.Exit(1)
@@ -220,6 +229,12 @@ func main() {
 				result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(obj_item.GetName(), obj_item, current_analyzer_path, *config)
 				list_of_result = append(list_of_result, result_analyzer)
 				result_analyzer.MakePreCommand(config)
+				if *printAnalizerCommands == true {
+					if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
+						list_of_analyzer_commands[obj_item.GetName()] = []string{}
+					}
+					list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+				}
 				if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
 					fmt.Println("Got error when checker result parsed ", err)
 					os.Exit(1)
@@ -232,7 +247,7 @@ func main() {
 		}
 	}
 
-	report := reporter.Make_ReporterContainer(config, &list_of_result)
+	report := reporter.Make_ReporterContainer(config, &list_of_result, list_of_analyzer_commands)
 	if path, fnd := report.CreateReport(); fnd == true {
 		tpl := templater.MakeTemplater()
 		tpl.PropogateData(report, path, config)

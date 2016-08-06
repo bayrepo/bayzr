@@ -20,7 +20,7 @@ BuildRequires: golang >= 1.6.2
 BuildRequires: golang-src >= 1.6.2
 BuildRequires: golang-bin >= 1.6.2
 
-Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint
+Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint frama-c
 
 %description
 The tool for simplification of using some code static analyzers such as cppcheck, oclint, rats etc

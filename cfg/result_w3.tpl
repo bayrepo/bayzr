@@ -491,6 +491,29 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 {{end}}
 </ul>
 
+{{ $length := len .ListOfCommands }} 
+{{ if gt $length 0 }}
+{{$parent:=.}}
+<h2>List of analyzer commands</h2>
+<div class="w3-accordion">
+{{range $index, $value := $parent.ListOfCommands}}
+  <button onclick="myFunction('repo{{$index}}')" class="w3-btn-block w3-left-align w3-khaki w3-border-black w3-border-bottom">{{$index}}</button>
+  <div id="repo{{$index}}" class="w3-accordion-content w3-container w3-small">  
+    <div>
+      <table class="w3-table tbl_code">
+{{range $iind, $value_list := $value}}
+	   <tr>
+        <td style="width:80px" class="w3-padding-0 w3-padding-left">{{$iind}}</td>
+        <td class="w3-border-green w3-border-left w3-padding-0  w3-padding-left"><span class="w3-padding-0 w3-margin-0 code">{{$value_list}}</span></td>
+       </tr>
+{{end}}
+      </table>
+    </div>
+  </div>
+{{end}}	
+</div>
+{{ end }}
+
 <h2>List of files</h2>
 
 

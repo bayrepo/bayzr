@@ -1,5 +1,5 @@
 //    BayZR - utility for managing set of static analysis tools
-//    Copyright (C) 2016  Alexey Berezhok 
+//    Copyright (C) 2016  Alexey Berezhok
 //    e-mail: bayrepo.info@gmail.com
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -24,8 +24,8 @@ import (
 	"os"
 	"path/filepath"
 	"reporter"
-	"time"
 	"sort"
+	"time"
 )
 
 type ListOfErrorsShort struct {
@@ -47,14 +47,16 @@ type PreparedToOutput struct {
 	ListOfLong     map[string]ListOfErrorLong
 	ListOfFiles    []string
 	Consts         []int
+	ListOfCommands map[string][]string
 }
 
 func MakeTemplater() *PreparedToOutput {
 	return &PreparedToOutput{"", map[string]int64{}, map[string][]ListOfErrorsShort{},
-		map[string]ListOfErrorLong{}, []string{}, []int{}}
+		map[string]ListOfErrorLong{}, []string{}, []int{}, map[string][]string{}}
 }
 
 func (this *PreparedToOutput) PropogateData(obj *reporter.ReporterContainer, path string, cfg *configparser.ConfigparserContainer) {
+	this.ListOfCommands = obj.GetCmdList()
 	t := time.Now()
 	this.ReportName = t.Format("Report from 2006-01-02 15:04:05")
 	list := obj.GetErrList()
