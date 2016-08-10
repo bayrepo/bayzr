@@ -31,6 +31,7 @@ import (
 	"reporter"
 	"resultanalyzer"
 	"templater"
+	"visualmenu"
 )
 
 const APP_VERSION = "0.1"
@@ -42,6 +43,7 @@ var useOnlyLocalFiles *bool
 var listOfOutputFiles string
 var listOfDiffFiles string
 var printAnalizerCommands *bool
+var printVisualMenu *bool
 
 const (
 	config_file_name = "bzr.conf"
@@ -69,6 +71,7 @@ func init() {
 	flag.StringVar(&listOfOutputFiles, "files", "*", "List of files should be inserted to report or * for all files(by dafault)")
 	flag.StringVar(&listOfDiffFiles, "diff", "", "List of patch file for get list of patched files")
 	printAnalizerCommands = flag.Bool("debug-commands", false, "Show list of generated static analizers options and commands")
+	printVisualMenu = flag.Bool("menu", false, "Show console menu for project options configuring")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("    bayzr [options] cmd ...\n")
@@ -114,6 +117,14 @@ func main() {
 	}
 	//дозаполняем дефолтными значениями если после чтения конфигурации ничего не нашлось
 	config.DefaultPropogate()
+	
+	checker.RemoveDuplicated()
+	
+	if *printVisualMenu == true {
+	    menu := visualmenu.Make_VisualMenu(config, checker.GetFullPluginList())
+	    menu.Show()
+	    os.Exit(0)
+	}
 
 	analyzer := outputanalyzer.CreateDefaultAnalyzer(config)
 
@@ -253,3 +264,5 @@ func main() {
 		tpl.PropogateData(report, path, config)
 	}
 }
+
+

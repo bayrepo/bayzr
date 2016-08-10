@@ -19,6 +19,7 @@ mkdir -p "$PRP_DIR/rpm"
 
 cp ../rpm/COPYRIGHT "$PRP_DIR/rpm/"
 cp ../rpm/gpl-3.0.txt "$PRP_DIR/rpm/"
+cp ../rpm/LICENSE_GOCUI "$PRP_DIR/rpm/"
 
 mv "$PRP_DIR/src/main/main.go" "$PRP_DIR/src/main/main.go.bak"
 

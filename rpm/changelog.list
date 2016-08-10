@@ -1,3 +1,6 @@
+* Wed Aug 10 2016 Alexey Berezhok <bayrepo.info@gmail.com> 0.1-8
+- Added interactive local config creation
+
 * Sun Aug 07 2016 Alexey Berezhok <bayrepo.info@gmail.com> 0.1-6
 - Added frama-c support
 

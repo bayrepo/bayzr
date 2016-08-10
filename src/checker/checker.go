@@ -615,6 +615,23 @@ func MakePluginsList(dir_to_find string) {
 
 }
 
+func RemoveDuplicated() {
+	listOfPlugins_tmp := []*PluginInfoDataContainer{}
+	for _, val := range listOfPlugins {
+		found := false
+		for _, val_tmp := range listOfPlugins_tmp {
+			if val_tmp.GetName() == val.GetName() {
+				found = true
+				break
+			}
+		}
+		if found == false {
+			listOfPlugins_tmp = append(listOfPlugins_tmp, val)
+		}
+	}
+	listOfPlugins = listOfPlugins_tmp
+}
+
 func (obj PluginInfoDataContainer) String() string {
 	buf := fmt.Sprintf("Name: %s\nDesc: %s\nID: %s\nType: %s\nOptions: %s\nResult: %s\nDelim: %s\nDefs: %s\nIncs: %s\nFName: %s\nCmd: %s\nLangdefault: %s\nLang:\n",
 		obj.name, obj.description, obj.id, obj.pType, strings.Join(obj.options, ", "),
@@ -929,6 +946,10 @@ func GetPluginContainerList() string {
 	return result
 }
 
+func (obj *PluginInfoDataContainer) GetNameId() string {
+	return obj.id
+}
+
 func (obj *PluginInfoDataContainer) GetName() string {
 	return obj.name
 }
@@ -987,4 +1008,8 @@ func (obj *PluginInfoDataContainer) SetCmdForFresh(lst []string) {
 
 func (obj *PluginInfoDataContainer) GetClean() string {
 	return obj.result_clean
+}
+
+func GetFullPluginList() []*PluginInfoDataContainer {
+	return listOfPlugins
 }

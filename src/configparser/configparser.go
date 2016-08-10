@@ -351,6 +351,10 @@ func (storage ConfigparserContainer) GetHtmlTemplate() string {
 	return storage.html_template
 }
 
+func (storage ConfigparserContainer) GetGlobalDefs() []string {
+	return storage.glovaldefs
+}
+
 func (storage *ConfigparserContainer) AddFndPath(path string) {
 	storage.fnd_path = append(storage.fnd_path, path)
 }
@@ -403,4 +407,63 @@ func (storage ConfigparserContainer) CheckFileLine(file string, line_num string)
 		}
 	}
 	return false
+}
+
+func (storage ConfigparserContainer) WriteToFile(file_name string) error {
+	fileHandle, err := os.OpenFile("bzr.conf", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+	if err != nil {
+		return fmt.Errorf("WriteToFile open config file error: %s\n", err)
+	}
+	writer := bufio.NewWriter(fileHandle)
+	defer fileHandle.Close()
+
+	fmt.Fprintln(writer, "[default]")
+	fmt.Fprintln(writer, "compilator = "+strings.Join(storage.compilatorsList, ", "))
+	fmt.Fprintln(writer, "extention = "+strings.Join(storage.extList, ", "))
+	fmt.Fprintln(writer, "bashcmd = "+strings.Join(storage.bash, " "))
+	if storage.showerroroutput {
+		fmt.Fprintln(writer, "stderr = on")
+	} else {
+		fmt.Fprintln(writer, "stderr = off")
+	}
+	if storage.cc_replacer {
+		fmt.Fprintln(writer, "replace = on")
+	} else {
+		fmt.Fprintln(writer, "replace = off")
+	}
+	fmt.Fprintln(writer, "globaldefs = "+strings.Join(storage.glovaldefs, " "))
+	fmt.Fprintln(writer, "outputfile = "+storage.outputfile)
+	fmt.Fprintln(writer, "\n[extended]")
+	for name, val := range storage.addParameters {
+		fmt.Fprintln(writer, name+" = "+strings.Join(val, " "))
+	}
+	fmt.Fprintln(writer, "\n[plugins]")
+	fmt.Fprintln(writer, "checkby = "+strings.Join(storage.checkby, ", "))
+	fmt.Fprintln(writer, "output = "+storage.output)
+	fmt.Fprintln(writer, "template = "+storage.template)
+	fmt.Fprintln(writer, "html_template = "+storage.html_template)
+	fmt.Fprintln(writer, "wrapstrings = "+strconv.FormatInt(storage.wrapstrings, 10))
+
+	fmt.Fprintln(writer, "\n[ignore]")
+	fmt.Fprintln(writer, strings.Join(storage.ignore, "\n"))
+	writer.Flush()
+	return nil
+}
+
+func (storage *ConfigparserContainer) SetFields(compilatorsList []string,
+	extList []string,
+	glovaldefs []string,
+	outputfile string,
+	cc_replacer bool,
+	checkby []string,
+	output string,
+	wrapstrings int64) {
+	storage.compilatorsList = compilatorsList
+	storage.extList = extList
+	storage.glovaldefs = glovaldefs
+	storage.outputfile = outputfile
+	storage.cc_replacer = cc_replacer
+	storage.checkby = checkby
+	storage.output = output
+	storage.wrapstrings = wrapstrings
 }

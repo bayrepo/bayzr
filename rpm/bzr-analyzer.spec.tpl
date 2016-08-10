@@ -20,7 +20,12 @@ BuildRequires: golang >= 1.6.2
 BuildRequires: golang-src >= 1.6.2
 BuildRequires: golang-bin >= 1.6.2
 
+%if 0%{?rhel} < 7
+Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint
+%else
 Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint frama-c
+%endif
+
 
 %description
 The tool for simplification of using some code static analyzers such as cppcheck, oclint, rats etc
@@ -50,6 +55,9 @@ for f in cfg/*.conf; do
 	install -D -p -m 644 $f %{buildroot}%{_sysconfdir}/bzr.d/$fn
     fi
 done
+%if 0%{?rhel} < 7
+    rm -rf %{buildroot}%{_sysconfdir}/bzr.d/frama-c.conf
+%endif
 for f in cfg/*.tpl; do
     fn=$(basename "$f")
     if [ "$fn" != "bzr.conf.tpl" -a "$fn" != "checkerplugin.cfd.tpl" ]; then
@@ -57,6 +65,7 @@ for f in cfg/*.tpl; do
     fi
 done
 install -D -p -m 644 rpm/gpl-3.0.txt %{buildroot}%{_datadir}/doc/%{pkgname}/LICENSE
+install -D -p -m 644 rpm/LICENSE_GOCUI %{buildroot}%{_datadir}/doc/%{pkgname}/LICENSE_GOCUI
 install -D -p -m 644 rpm/COPYRIGHT %{buildroot}%{_datadir}/doc/%{pkgname}/COPYRIGHT
 
 %clean
@@ -64,7 +73,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc %{_datadir}/doc/%{pkgname}/LICENSE 
+%doc %{_datadir}/doc/%{pkgname}/LICENSE
+%doc %{_datadir}/doc/%{pkgname}/LICENSE_GOCUI
 %doc %{_datadir}/doc/%{pkgname}/COPYRIGHT
 %{_bindir}/bayzr
 %config(noreplace) %{_sysconfdir}/bzr.conf
