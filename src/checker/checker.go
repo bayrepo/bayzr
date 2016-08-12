@@ -182,6 +182,7 @@ type PluginInfoDataContainer struct {
 	result_clean  string
 	precommand    string
 	fresh         bool
+	compose       bool
 
 	//tmp no printable
 	cmd_for_fresh []string
@@ -515,6 +516,11 @@ func (obj *PluginInfoDataContainer) Parse(file_name string) error {
 				obj.fresh = false
 			} else {
 				obj.fresh = true
+			}
+			if _, err := findOneValue(preScan, "COMPOSE"); err != nil {
+				obj.compose = false
+			} else {
+				obj.compose = true
 			}
 			if nm, def, err := findLangLikeParam(preScan, "LANG", "c"); err == nil {
 				obj.lang = nm
@@ -1012,4 +1018,8 @@ func (obj *PluginInfoDataContainer) GetClean() string {
 
 func GetFullPluginList() []*PluginInfoDataContainer {
 	return listOfPlugins
+}
+
+func (obj *PluginInfoDataContainer) GetCompose() bool {
+	return obj.compose
 }

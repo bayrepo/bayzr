@@ -5,12 +5,12 @@ import (
 	"configparser"
 	"fmt"
 	"github.com/jroimartin/gocui"
-	"log"
-	"strconv"
-	"strings"
-	"os"
 	"io"
 	"io/ioutil"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 )
 
 var dialogs [][]string = [][]string{
@@ -297,8 +297,12 @@ func (this *VisualMenu) saveConfig(g *gocui.Gui, v *gocui.View) error {
 
 	if exst, _ := bzrd_exists("bzr.d"); exst == false {
 		if exst_etc, err_dir := bzrd_exists("/etc/bzr.d"); exst_etc == true && err_dir == nil {
-			err = CopyDir("/etc/bzr.d", "./bzr.d")
-			if err != nil {
+			if currentPath, err := os.Getwd(); err == nil {
+				err = CopyDir("/etc/bzr.d", currentPath+"/bzr.d")
+				if err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
 		}

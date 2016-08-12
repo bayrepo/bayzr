@@ -318,6 +318,7 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 		}
 
 	}
+	
 
 	for key := range list {
 		if len(list[key].List) == 1 {
@@ -351,6 +352,9 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 		for key := range list {
 			fnd := false
 			for key2 := range list {
+			    if list[key2].List[0].Item.File != list[key].List[0].Item.File {
+			        continue
+			    }
 				if (key != key2) && ((list[key].To >= list[key2].From && list[key].From <= list[key2].From) ||
 					(list[key2].To >= list[key].From && list[key2].From <= list[key].From) ||
 					(list[key2].From >= list[key].From && list[key2].To <= list[key].To) ||

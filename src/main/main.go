@@ -27,9 +27,11 @@ import (
 	"os"
 	"os/user"
 	"outputanalyzer"
+	"path/filepath"
 	"replacer"
 	"reporter"
 	"resultanalyzer"
+	"strings"
 	"templater"
 	"visualmenu"
 )
@@ -117,13 +119,13 @@ func main() {
 	}
 	//дозаполняем дефолтными значениями если после чтения конфигурации ничего не нашлось
 	config.DefaultPropogate()
-	
+
 	checker.RemoveDuplicated()
-	
+
 	if *printVisualMenu == true {
-	    menu := visualmenu.Make_VisualMenu(config, checker.GetFullPluginList())
-	    menu.Show()
-	    os.Exit(0)
+		menu := visualmenu.Make_VisualMenu(config, checker.GetFullPluginList())
+		menu.Show()
+		os.Exit(0)
 	}
 
 	analyzer := outputanalyzer.CreateDefaultAnalyzer(config)
@@ -189,34 +191,104 @@ func main() {
 			}
 			fmt.Printf("--------------------Process of source analyzing is begun by plugin %s----------------\n", obj_item.GetName())
 			if obj_item != nil {
-				for file_name, value := range *analyzer.GetParsedFilesList() {
-					if config.IsFileIgnored(file_name) == false {
-						c_f, cpp_f := gcc.MakeHeaders(obj_item.GetAutoIncludes())
-						new_incc_list := append(gcc.GetC(), c_f)
-						new_inccpp_list := append(gcc.GetCPP(), cpp_f)
-						file_name = outputanalyzer.TransformFileName(file_name, value.Dir)
-						if file_name == "" {
-							continue
-						}
-						if cmd, err := obj_item.GetPluginCMD(file_name, value.IncludesList, value.DefList, config, new_incc_list, new_inccpp_list, value.Raw); err != nil {
-							fmt.Println("Got error when cmd parsed ", err)
-							os.Exit(1)
-						} else {
-							result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(file_name, obj_item, current_analyzer_path, *config)
-							list_of_result = append(list_of_result, result_analyzer)
-							if *printAnalizerCommands == true {
-								if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
-									list_of_analyzer_commands[obj_item.GetName()] = []string{}
-								}
-								list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+				if obj_item.GetCompose() == true {
+					files_list := map[string]map[string][]string{}
+					c_f, cpp_f := gcc.MakeHeaders(obj_item.GetAutoIncludes())
+					new_incc_list := append(gcc.GetC(), c_f)
+					new_inccpp_list := append(gcc.GetCPP(), cpp_f)
+					val_new_inc := []string{}
+					val_new_defs := []string{}
+					for file_name, value := range *analyzer.GetParsedFilesList() {
+						if config.IsFileIgnored(file_name) == false {
+							file_name = outputanalyzer.TransformFileName(file_name, value.Dir)
+							if file_name == "" {
+								continue
 							}
-							if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
-								fmt.Println("Got error when checker result parsed ", err)
-								os.Exit(1)
+							val_new_inc = append(val_new_inc, value.IncludesList...)
+							val_new_defs = append(val_new_defs, value.DefList...)
+							val_new_inc = configparser.RemoveDuplicate(val_new_inc)
+							val_new_defs = configparser.RemoveDuplicate(val_new_defs)
+							dir := filepath.Dir(file_name)
+							ext := filepath.Ext(file_name)
+							base := filepath.Base(file_name)
+							if _, ok := files_list[dir]; ok == false {
+								files_list[dir] = map[string][]string{}
+							}
+							if ext == "" {
+								files_list[dir]["noextensionsinfilename"] = append(files_list[dir]["noextensionsinfilename"], file_name)
+							} else {
+								files_list[dir][ext] = append(files_list[dir][ext], base)
 							}
 						}
 					}
+					files_list_last := []string{}
+					for dir_path, value_tmp := range files_list {
+						for ext_name, file_value := range value_tmp {
+							if ext_name == "noextensionsinfilename" {
+								for _, f_name := range file_value {
+									files_list_last = append(files_list_last, f_name)
+								}
+							} else {
+								if len(file_value) > 1 {
+									files_list_last = append(files_list_last, dir_path+"/*"+ext_name)
+								} else {
+									for _, f_name := range file_value {
+										files_list_last = append(files_list_last, f_name)
+									}
+								}
+							}
+						}
+					}
+					if len(files_list_last) == 0 {
+						continue
+					}
+					if cmd, err := obj_item.GetPluginCMD(strings.Join(files_list_last, " "), val_new_inc, val_new_defs, config, new_incc_list, new_inccpp_list, []string{}); err != nil {
+						fmt.Println("Got error when cmd parsed ", err)
+						os.Exit(1)
+					} else {
+						result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(obj_item.GetName(), obj_item, current_analyzer_path, *config)
+						list_of_result = append(list_of_result, result_analyzer)
+						if *printAnalizerCommands == true {
+							if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
+								list_of_analyzer_commands[obj_item.GetName()] = []string{}
+							}
+							list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+						}
+						if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
+							fmt.Println("Got error when checker result parsed ", err)
+							os.Exit(1)
+						}
+					}
+				} else {
+					for file_name, value := range *analyzer.GetParsedFilesList() {
+						if config.IsFileIgnored(file_name) == false {
+							c_f, cpp_f := gcc.MakeHeaders(obj_item.GetAutoIncludes())
+							new_incc_list := append(gcc.GetC(), c_f)
+							new_inccpp_list := append(gcc.GetCPP(), cpp_f)
+							file_name = outputanalyzer.TransformFileName(file_name, value.Dir)
+							if file_name == "" {
+								continue
+							}
+							if cmd, err := obj_item.GetPluginCMD(file_name, value.IncludesList, value.DefList, config, new_incc_list, new_inccpp_list, value.Raw); err != nil {
+								fmt.Println("Got error when cmd parsed ", err)
+								os.Exit(1)
+							} else {
+								result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(file_name, obj_item, current_analyzer_path, *config)
+								list_of_result = append(list_of_result, result_analyzer)
+								if *printAnalizerCommands == true {
+									if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
+										list_of_analyzer_commands[obj_item.GetName()] = []string{}
+									}
+									list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+								}
+								if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
+									fmt.Println("Got error when checker result parsed ", err)
+									os.Exit(1)
+								}
+							}
+						}
 
+					}
 				}
 			} else {
 				fmt.Printf("Can't find plugin %s\n", plg)
@@ -264,5 +336,3 @@ func main() {
 		tpl.PropogateData(report, path, config)
 	}
 }
-
-
