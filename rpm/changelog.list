@@ -1,3 +1,6 @@
+* Sat Aug 13 2016 Alexey Berezhok <bayrepo.info@gmail.com> 0.1-10
+- Frama-c related fixes
+
 * Sat Aug 13 2016 Alexey Berezhok <bayrepo.info@gmail.com> 0.1-9
 - Fixes for report creation and frama-c
 

@@ -20,10 +20,12 @@ package main
 import (
 	"checker"
 	"configparser"
+	"crypto/md5"
 	"diffanalyzer"
 	"flag"
 	"fmt"
 	"gccincludes"
+	"io"
 	"os"
 	"os/user"
 	"outputanalyzer"
@@ -192,48 +194,85 @@ func main() {
 			fmt.Printf("--------------------Process of source analyzing is begun by plugin %s----------------\n", obj_item.GetName())
 			if obj_item != nil {
 				if obj_item.GetCompose() == true {
-					files_list := map[string]map[string][]string{}
+					files_list := map[string]map[string]map[string][]string{}
 					c_f, cpp_f := gcc.MakeHeaders(obj_item.GetAutoIncludes())
 					new_incc_list := append(gcc.GetC(), c_f)
 					new_inccpp_list := append(gcc.GetCPP(), cpp_f)
-					val_new_inc := []string{}
-					val_new_defs := []string{}
+					val_new_inc := map[string][]string{}
+					val_new_defs := map[string][]string{}
+					extaopts_for_files := map[string][]string{}
 					for file_name, value := range *analyzer.GetParsedFilesList() {
 						if config.IsFileIgnored(file_name) == false {
 							file_name = outputanalyzer.TransformFileName(file_name, value.Dir)
 							if file_name == "" {
 								continue
 							}
-							val_new_inc = append(val_new_inc, value.IncludesList...)
-							val_new_defs = append(val_new_defs, value.DefList...)
-							val_new_inc = configparser.RemoveDuplicate(val_new_inc)
-							val_new_defs = configparser.RemoveDuplicate(val_new_defs)
+							hash := md5.New()
+							io.WriteString(hash, strings.Join(value.IncludesList, " ")+strings.Join(value.DefList, " "))
+							hash_str := fmt.Sprintf("%x", hash.Sum(nil))
+							if _, ok := val_new_inc[hash_str]; ok == false {
+								val_new_inc[hash_str] = []string{}
+							}
+							if _, ok := val_new_defs[hash_str]; ok == false {
+								val_new_defs[hash_str] = []string{}
+							}
+							if _, ok := files_list[hash_str]; ok == false {
+								files_list[hash_str] = map[string]map[string][]string{}
+							}
+							val_new_inc[hash_str] = append(val_new_inc[hash_str], value.IncludesList...)
+							val_new_defs[hash_str] = append(val_new_defs[hash_str], value.DefList...)
+							val_new_inc[hash_str] = configparser.RemoveDuplicate(val_new_inc[hash_str])
+							val_new_defs[hash_str] = configparser.RemoveDuplicate(val_new_defs[hash_str])
 							dir := filepath.Dir(file_name)
 							ext := filepath.Ext(file_name)
 							base := filepath.Base(file_name)
-							if _, ok := files_list[dir]; ok == false {
-								files_list[dir] = map[string][]string{}
+							if extra, fnd := obj_item.GetExtraOptions(file_name); fnd == true {
+								extaopts_for_files[hash_str] = append(extaopts_for_files[hash_str], extra...)
+							}
+							if _, ok := files_list[hash_str][dir]; ok == false {
+								files_list[hash_str][dir] = map[string][]string{}
 							}
 							if ext == "" {
-								files_list[dir]["noextensionsinfilename"] = append(files_list[dir]["noextensionsinfilename"], file_name)
+								files_list[hash_str][dir]["noextensionsinfilename"] = append(files_list[hash_str][dir]["noextensionsinfilename"], file_name)
 							} else {
-								files_list[dir][ext] = append(files_list[dir][ext], base)
+								files_list[hash_str][dir][ext] = append(files_list[hash_str][dir][ext], base)
 							}
 						}
 					}
-					files_list_last := []string{}
-					for dir_path, value_tmp := range files_list {
-						for ext_name, file_value := range value_tmp {
-							if ext_name == "noextensionsinfilename" {
-								for _, f_name := range file_value {
-									files_list_last = append(files_list_last, f_name)
+					files_list_last := map[string][]string{}
+					for hash, value_tmp_h := range files_list {
+						for dir_path, value_tmp := range value_tmp_h {
+							for ext_name, file_value := range value_tmp {
+
+								fnd := false
+								for hash_tmp, value_tmp_tmp_h := range files_list {
+									if hash_tmp != hash {
+										for dir_path_tmp, _ := range value_tmp_tmp_h {
+											if dir_path_tmp == dir_path {
+												fnd = true
+												break
+											}
+										}
+									}
+									if fnd == true {
+										break
+									}
 								}
-							} else {
-								if len(file_value) > 1 {
-									files_list_last = append(files_list_last, dir_path+"/*"+ext_name)
-								} else {
+								if fnd == true {
+									ext_name = "noextensionsinfilename"
+								}
+
+								if ext_name == "noextensionsinfilename" {
 									for _, f_name := range file_value {
-										files_list_last = append(files_list_last, f_name)
+										files_list_last[hash] = append(files_list_last[hash], f_name)
+									}
+								} else {
+									if len(file_value) > 1 {
+										files_list_last[hash] = append(files_list_last[hash], dir_path+"/*"+ext_name)
+									} else {
+										for _, f_name := range file_value {
+											files_list_last[hash] = append(files_list_last[hash], f_name)
+										}
 									}
 								}
 							}
@@ -242,21 +281,25 @@ func main() {
 					if len(files_list_last) == 0 {
 						continue
 					}
-					if cmd, err := obj_item.GetPluginCMD(strings.Join(files_list_last, " "), val_new_inc, val_new_defs, config, new_incc_list, new_inccpp_list, []string{}); err != nil {
-						fmt.Println("Got error when cmd parsed ", err)
-						os.Exit(1)
-					} else {
-						result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(obj_item.GetName(), obj_item, current_analyzer_path, *config)
-						list_of_result = append(list_of_result, result_analyzer)
-						if *printAnalizerCommands == true {
-							if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
-								list_of_analyzer_commands[obj_item.GetName()] = []string{}
-							}
-							list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
-						}
-						if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
-							fmt.Println("Got error when checker result parsed ", err)
+					for hash, f_list := range files_list_last {
+						obj_item.SetAccumulatedExtraOptions(extaopts_for_files[hash])
+						if cmd, err := obj_item.GetPluginCMD(strings.Join(f_list, " "), val_new_inc[hash], val_new_defs[hash], config, new_incc_list, new_inccpp_list, []string{}); err != nil {
+							fmt.Println("Got error when cmd parsed ", err)
 							os.Exit(1)
+						} else {
+							result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(obj_item.GetName(), obj_item, current_analyzer_path, *config)
+							list_of_result = append(list_of_result, result_analyzer)
+							if *printAnalizerCommands == true {
+								fmt.Println(cmd)
+								if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
+									list_of_analyzer_commands[obj_item.GetName()] = []string{}
+								}
+								list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+							}
+							if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
+								fmt.Println("Got error when checker result parsed ", err)
+								os.Exit(1)
+							}
 						}
 					}
 				} else {
@@ -269,6 +312,11 @@ func main() {
 							if file_name == "" {
 								continue
 							}
+							extaopts_for_files := []string{}
+							if extra, fnd := obj_item.GetExtraOptions(file_name); fnd == true {
+								extaopts_for_files = extra
+							}
+							obj_item.SetAccumulatedExtraOptions(extaopts_for_files)
 							if cmd, err := obj_item.GetPluginCMD(file_name, value.IncludesList, value.DefList, config, new_incc_list, new_inccpp_list, value.Raw); err != nil {
 								fmt.Println("Got error when cmd parsed ", err)
 								os.Exit(1)
@@ -276,6 +324,7 @@ func main() {
 								result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(file_name, obj_item, current_analyzer_path, *config)
 								list_of_result = append(list_of_result, result_analyzer)
 								if *printAnalizerCommands == true {
+									fmt.Println(cmd)
 									if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
 										list_of_analyzer_commands[obj_item.GetName()] = []string{}
 									}
@@ -313,6 +362,7 @@ func main() {
 				list_of_result = append(list_of_result, result_analyzer)
 				result_analyzer.MakePreCommand(config)
 				if *printAnalizerCommands == true {
+					fmt.Println(cmd)
 					if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
 						list_of_analyzer_commands[obj_item.GetName()] = []string{}
 					}

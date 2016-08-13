@@ -183,9 +183,11 @@ type PluginInfoDataContainer struct {
 	precommand    string
 	fresh         bool
 	compose       bool
+	extraoptions  map[string][]string
 
 	//tmp no printable
-	cmd_for_fresh []string
+	cmd_for_fresh          []string
+	accumulated_extra_opts []string
 }
 
 var listOfPlugins []*PluginInfoDataContainer
@@ -392,6 +394,23 @@ func findLangLikeParam(preScan []preScanned, name string, default_val string) ([
 	return end_result, def_lan, nil
 }
 
+func findExtraOpt(preScan []preScanned) (map[string][]string, error) {
+	var err error = fmt.Errorf("Extra Options not found")
+	var result []string
+	opts := map[string][]string{}
+	if result, err = findSliceValue(preScan, "EXTRAOPTIONS"); err != nil {
+		return opts, err
+	}
+	for _, value := range result {
+		res := configparser.SplitOwnLongSep(value, []string{":"})
+		if len(res) > 1 {
+			opts[res[0]] = append(opts[res[0]], configparser.SplitOwn(strings.Trim(res[1], " \n\t"))...)
+			opts[res[0]] = configparser.RemoveDuplicate(opts[res[0]])
+		}
+	}
+	return opts, nil
+}
+
 func findResult(preScan []preScanned) ([]string, rune, string, map[string][]string, bool, int, string, error) {
 	var result []string
 	var err error
@@ -558,6 +577,9 @@ func (obj *PluginInfoDataContainer) Parse(file_name string) error {
 				obj.dontstop = dnt
 				obj.result_spaces = spc
 				obj.result_clean = cln
+			}
+			if extraopt, err := findExtraOpt(preScan); err == nil {
+				obj.extraoptions = extraopt
 			}
 			if nm, err := findVariables(preScan); err != nil {
 				return err
@@ -818,6 +840,9 @@ func (obj *PluginInfoDataContainer) getVariableValue(name string, file string, i
 		return file, true, nil
 	} else if name == "OPTIONS" {
 		res := strings.Join(obj.options, " ")
+		if len(obj.accumulated_extra_opts) > 0 {
+			res = res + strings.Join(obj.accumulated_extra_opts, " ")
+		}
 		return res, true, nil
 	} else {
 		res := ""
@@ -1022,4 +1047,18 @@ func GetFullPluginList() []*PluginInfoDataContainer {
 
 func (obj *PluginInfoDataContainer) GetCompose() bool {
 	return obj.compose
+}
+
+func (obj *PluginInfoDataContainer) GetExtraOptions(file_name string) ([]string, bool) {
+	for f_n, value := range obj.extraoptions {
+		if strings.Contains(file_name, f_n) == true {
+			return value, true
+		}
+	}
+	return []string{}, false
+}
+
+func (obj *PluginInfoDataContainer) SetAccumulatedExtraOptions(opts []string) {
+	obj.accumulated_extra_opts = append(obj.accumulated_extra_opts, opts...)
+	obj.accumulated_extra_opts = configparser.RemoveDuplicate(obj.accumulated_extra_opts)
 }
