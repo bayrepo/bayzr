@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$1" -eq "--delete" ]; then
+if [ "$1"=="--delete" ]; then
     if [ -e /etc/bzr.conf ]; then
         rm -f /etc/bzr.conf
     fi
