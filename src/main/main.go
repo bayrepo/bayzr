@@ -48,6 +48,7 @@ var listOfOutputFiles string
 var listOfDiffFiles string
 var printAnalizerCommands *bool
 var printVisualMenu *bool
+var dryRun *bool
 
 const (
 	config_file_name = "bzr.conf"
@@ -76,6 +77,7 @@ func init() {
 	flag.StringVar(&listOfDiffFiles, "diff", "", "List of patch file for get list of patched files")
 	printAnalizerCommands = flag.Bool("debug-commands", false, "Show list of generated static analizers options and commands")
 	printVisualMenu = flag.Bool("menu", false, "Show console menu for project options configuring")
+	dryRun = flag.Bool("dry-run", false, "Show list of generated static analizers options and commands without analitic tool starting")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("    bayzr [options] cmd ...\n")
@@ -289,12 +291,15 @@ func main() {
 						} else {
 							result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(obj_item.GetName(), obj_item, current_analyzer_path, *config)
 							list_of_result = append(list_of_result, result_analyzer)
-							if *printAnalizerCommands == true {
+							if *printAnalizerCommands == true || *dryRun == true {
 								fmt.Println(cmd)
 								if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
 									list_of_analyzer_commands[obj_item.GetName()] = []string{}
 								}
 								list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+								if *dryRun {
+									continue
+								}
 							}
 							if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
 								fmt.Println("Got error when checker result parsed ", err)
@@ -323,12 +328,15 @@ func main() {
 							} else {
 								result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(file_name, obj_item, current_analyzer_path, *config)
 								list_of_result = append(list_of_result, result_analyzer)
-								if *printAnalizerCommands == true {
+								if *printAnalizerCommands == true || *dryRun == true {
 									fmt.Println(cmd)
 									if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
 										list_of_analyzer_commands[obj_item.GetName()] = []string{}
 									}
 									list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+									if *dryRun {
+										continue
+									}
 								}
 								if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
 									fmt.Println("Got error when checker result parsed ", err)
@@ -361,12 +369,15 @@ func main() {
 				result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(obj_item.GetName(), obj_item, current_analyzer_path, *config)
 				list_of_result = append(list_of_result, result_analyzer)
 				result_analyzer.MakePreCommand(config)
-				if *printAnalizerCommands == true {
+				if *printAnalizerCommands == true || *dryRun == true {
 					fmt.Println(cmd)
 					if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
 						list_of_analyzer_commands[obj_item.GetName()] = []string{}
 					}
 					list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+					if *dryRun {
+						continue
+					}
 				}
 				if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
 					fmt.Println("Got error when checker result parsed ", err)
