@@ -1,0 +1,47 @@
+<foolint-rules>
+	<rule>
+		<key>BayZRRule_Low</key>
+		<name>BayZR Rule Low</name>
+		<internalKey>BayZRRule_Low</internalKey>
+		<description>Rule with low danger status
+		</description>
+		<severity>MAJOR</severity>
+		<type>CODE_SMELL</type>
+		<cardinality>SINGLE</cardinality>
+		<status>READY</status>
+		<tag>bayzr</tag>
+		<tag>notofication</tag>
+		<remediationFunction>LINEAR</remediationFunction>
+		<remediationFunctionGapMultiplier>300min</remediationFunctionGapMultiplier>
+	</rule>
+	<rule>
+		<key>BayZRRule_Medium</key>
+		<name>BayZR Rule Medium</name>
+		<internalKey>BayZRRule_Medium</internalKey>
+		<description>Rule with medium danger status
+		</description>
+		<severity>CRITICAL</severity>
+		<type>BUG</type>
+		<cardinality>SINGLE</cardinality>
+		<status>READY</status>
+		<tag>bayzr</tag>
+		<tag>conversation</tag>
+        <remediationFunction>LINEAR</remediationFunction>
+        <remediationFunctionGapMultiplier>300min</remediationFunctionGapMultiplier>		
+	</rule>
+	<rule>
+		<key>BayZRRule_High</key>
+		<name>BayZR Rule High</name>
+		<internalKey>BayZRRule_High</internalKey>
+		<description>Rule with high danger status
+		</description>
+		<severity>BLOCKER</severity>
+		<type>BUG</type>
+		<cardinality>SINGLE</cardinality>
+		<status>READY</status>
+		<tag>bayzr</tag>
+		<tag>danger</tag>
+	    <remediationFunction>LINEAR</remediationFunction>
+	    <remediationFunctionGapMultiplier>600min</remediationFunctionGapMultiplier>
+	</rule>
+</foolint-rules>
