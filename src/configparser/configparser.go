@@ -45,6 +45,7 @@ type ConfigparserContainer struct {
 	cc_replacer             bool                                   //use CC, CXX replace or just analyze output
 	list_of_files           []string                               //list of files to output
 	list_of_files_lines_num map[string][]DiffAnalyzerContainer_x_y //string numbers and files to output
+	db_connect_params       string                                 //default empty, [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
 }
 
 type DiffAnalyzerContainer_x_y struct {
@@ -157,7 +158,7 @@ func CreateDefaultConfig() *ConfigparserContainer {
 		[]string{"/usr/bin/bash", "-c"},
 		true, []string{}, string("custom"),
 		string("FILE|LINE|SEV|ID|MESSAGE"), 10, []string{}, []string{}, string("report.log"),
-		"", []string{}, false, []string{"*"}, map[string][]DiffAnalyzerContainer_x_y{}}
+		"", []string{}, false, []string{"*"}, map[string][]DiffAnalyzerContainer_x_y{}, ""}
 }
 
 /*
@@ -236,6 +237,11 @@ func (storage *ConfigparserContainer) ReadConfig(configName string) error {
 									if err == nil {
 										storage.wrapstrings = i
 									}
+								}
+							}
+							if section == "database" {
+								if section_key == "connecturl" {
+									storage.db_connect_params = strings.Trim(matches[2], " \n\t")
 								}
 							}
 						}
@@ -374,6 +380,10 @@ func (storage *ConfigparserContainer) SetFilesList(list string) {
 func (storage *ConfigparserContainer) SetFilesList_list(list []string, line_list map[string][]DiffAnalyzerContainer_x_y) {
 	storage.list_of_files = list
 	storage.list_of_files_lines_num = line_list
+}
+
+func (storage ConfigparserContainer) Connector() string {
+	return storage.db_connect_params
 }
 
 func (storage ConfigparserContainer) CheckFile(file string) bool {

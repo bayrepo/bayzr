@@ -21,6 +21,7 @@ export PATH=$PATH:$GOPATH/bin
 /usr/bin/go get github.com/jroimartin/gocui
 /usr/bin/go get github.com/nsf/termbox-go
 /usr/bin/go get github.com/mattn/go-runewidth
+/usr/bin/go get github.com/go-sql-driver/mysql
 
 /usr/bin/go build -o ../bin/bayzr main
 

@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"gccincludes"
 	"io"
+	"mysqlsaver"
 	"os"
 	"os/user"
 	"outputanalyzer"
@@ -49,6 +50,8 @@ var listOfDiffFiles string
 var printAnalizerCommands *bool
 var printVisualMenu *bool
 var dryRun *bool
+var author string
+var build_info string
 
 const (
 	config_file_name = "bzr.conf"
@@ -78,6 +81,8 @@ func init() {
 	printAnalizerCommands = flag.Bool("debug-commands", false, "Show list of generated static analizers options and commands")
 	printVisualMenu = flag.Bool("menu", false, "Show console menu for project options configuring")
 	dryRun = flag.Bool("dry-run", false, "Show list of generated static analizers options and commands without analitic tool starting")
+	flag.StringVar(&author, "build-author", "build-master", "Set of build's author")
+	flag.StringVar(&build_info, "build-name", "autobuild", "Set of build's name")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("    bayzr [options] cmd ...\n")
@@ -138,6 +143,14 @@ func main() {
 		replace.RunWrapper(analyzer, config)
 		os.Exit(0)
 	}
+
+	var DBase mysqlsaver.MySQLSaver
+	dbErr := DBase.Init(config.Connector())
+	if dbErr != nil {
+		fmt.Printf("DataBase saving error %s\n", dbErr)
+		os.Exit(1)
+	}
+	defer DBase.Finalize()
 
 	if *listOfPlugins {
 		fmt.Println(checker.GetPluginContainerList())
@@ -391,7 +404,13 @@ func main() {
 		}
 	}
 
-	report := reporter.Make_ReporterContainer(config, &list_of_result, list_of_analyzer_commands)
+	dbErr = DBase.CreateCurrentBuild(author, build_info)
+	if dbErr != nil {
+		fmt.Printf("DataBase saving error %s\n", dbErr)
+		os.Exit(1)
+	}
+
+	report := reporter.Make_ReporterContainer(config, &list_of_result, list_of_analyzer_commands, &DBase)
 	if path, fnd := report.CreateReport(); fnd == true {
 		tpl := templater.MakeTemplater()
 		tpl.PropogateData(report, path, config)

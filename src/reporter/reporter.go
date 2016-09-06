@@ -22,6 +22,7 @@ import (
 	"configparser"
 	"fmt"
 	"io"
+	"mysqlsaver"
 	"os"
 	"resultanalyzer"
 	"sort"
@@ -102,6 +103,7 @@ type ReporterContainer struct {
 	err_list_files   map[string][]*ReporterContainerItem
 	err_list_names   []string
 	list_of_commands map[string][]string
+	mysqldriver      *mysqlsaver.MySQLSaver
 }
 
 func (this *ReporterContainer) String() string {
@@ -129,8 +131,8 @@ func (this *ReporterContainer) rebuildListToMapList() {
 	sort.Strings(this.err_list_names)
 }
 
-func Make_ReporterContainer(conf *configparser.ConfigparserContainer, lst *[]*resultanalyzer.ResultAnalyzerConatiner, list_of_cmds map[string][]string) *ReporterContainer {
-	return &ReporterContainer{conf, lst, []*ReporterContainerItem{}, map[string][]*ReporterContainerItem{}, []string{}, list_of_cmds}
+func Make_ReporterContainer(conf *configparser.ConfigparserContainer, lst *[]*resultanalyzer.ResultAnalyzerConatiner, list_of_cmds map[string][]string, db *mysqlsaver.MySQLSaver) *ReporterContainer {
+	return &ReporterContainer{conf, lst, []*ReporterContainerItem{}, map[string][]*ReporterContainerItem{}, []string{}, list_of_cmds, db}
 }
 
 func quickCommentAnalysis(fn string, line_in string) bool {
@@ -174,6 +176,47 @@ func quickCommentAnalysis(fn string, line_in string) bool {
 	}
 
 	return true
+}
+
+func (this *ReporterContainer) saveAnalyzisDB() {
+	if this.mysqldriver.IsDbConnect() == false {
+		return
+	}
+	for _, value := range *this.list {
+		array_list, plugin_name := value.GetListOfErrors()
+
+		is_fnd_file := false
+
+		for _, message := range array_list {
+			if quickCommentAnalysis(message.File, message.Line) == true {
+				if this.config.CheckFile(message.File) == true {
+					is_fnd_file = true
+					break
+				}
+			}
+		}
+
+		if is_fnd_file == true {
+
+			for _, message := range array_list {
+				if this.config.CheckFile(message.File) == false {
+					continue
+				}
+				if this.config.CheckFileLine(message.File, message.Line) == false {
+					continue
+				}
+
+				if quickCommentAnalysis(message.File, message.Line) == true {
+					err := this.mysqldriver.InsertInfo(plugin_name, message.Sev, message.File,
+						message.Line, message.Message)
+					if err != nil {
+						fmt.Printf("Error of saving to database %s", err)
+					}
+
+				}
+			}
+		}
+	}
 }
 
 func (this *ReporterContainer) saveAnalyzisInfoDirect(file_name string, report_template string) {
@@ -318,7 +361,6 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 		}
 
 	}
-	
 
 	for key := range list {
 		if len(list[key].List) == 1 {
@@ -352,9 +394,9 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 		for key := range list {
 			fnd := false
 			for key2 := range list {
-			    if list[key2].List[0].Item.File != list[key].List[0].Item.File {
-			        continue
-			    }
+				if list[key2].List[0].Item.File != list[key].List[0].Item.File {
+					continue
+				}
 				if (key != key2) && ((list[key].To >= list[key2].From && list[key].From <= list[key2].From) ||
 					(list[key2].To >= list[key].From && list[key2].From <= list[key].From) ||
 					(list[key2].From >= list[key].From && list[key2].To <= list[key].To) ||
@@ -607,6 +649,34 @@ func isThereDisableCommet(cont *ReporterContainerItem) bool {
 	return err_nums != 0
 }
 
+func (this *ReporterContainer) saveAnalyzisInfoDirectToDB() {
+	if this.mysqldriver.IsDbConnect() == false {
+		return
+	}
+	this.rebuildListToMapList()
+	for _, file_nm := range this.err_list_names {
+		for _, list := range this.err_list_files[file_nm] {
+			for _, value := range list.List_strings {
+				if value.Value <= DANGER {
+					err := this.mysqldriver.InsertExtInfo(value.Plugin, file_nm, "", 1, "Low", value.Line, 0)
+					if err != nil {
+						fmt.Printf("Error of saving to database %s", err)
+					}
+				} else {
+					err := this.mysqldriver.InsertExtInfo("", file_nm, value.Line, 0, "", "", value.Number)
+					if err != nil {
+						fmt.Printf("Error of saving to database %s", err)
+					}
+				}
+			}
+			err := this.mysqldriver.InsertExtInfo("", file_nm, "", 2, "", "", 0)
+			if err != nil {
+				fmt.Printf("Error of saving to database %s", err)
+			}
+		}
+	}
+}
+
 func (this *ReporterContainer) saveAnalyzisInfoDirectTxt(file_name string) {
 	file, err := os.Create(file_name)
 	if err != nil {
@@ -667,12 +737,14 @@ func (this *ReporterContainer) getAnalyzisInfoDirectHtml(file_name string) strin
 
 func (this *ReporterContainer) CreateReport() (string, bool) {
 	report_type, report_template, report_number, report_file := this.config.GetReport()
+	this.saveAnalyzisDB()
 	switch {
 	case report_type == "custom":
 		this.saveAnalyzisInfoDirect(report_file, report_template)
 		return "", false
 	case report_type == "html" || report_type == "txt":
 		this.saveAnalyzisInfo(report_file, report_number)
+		this.saveAnalyzisInfoDirectToDB()
 		if report_type == "txt" {
 			this.saveAnalyzisInfoDirectTxt(report_file)
 			return "", false
