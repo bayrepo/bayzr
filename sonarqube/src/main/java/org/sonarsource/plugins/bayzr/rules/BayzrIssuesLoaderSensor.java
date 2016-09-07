@@ -126,7 +126,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
         fileSystem.predicates().hasRelativePath(error.getFilePath()),
         fileSystem.predicates().hasType(InputFile.Type.MAIN)));
 
-    LOGGER.info("inputFile null ? " + inputFile);
+    //LOGGER.info("inputFile null ? " + inputFile);
 
     if (inputFile != null) {
       saveIssue(inputFile, error.getLine(), error.getType(), error.getDescription());
@@ -149,7 +149,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
     }
     newIssue.at(primaryLocation);
 
-    LOGGER.info("Issue " + newIssue);
+    //LOGGER.info("Issue " + newIssue);
     newIssue.save();
   }
 
@@ -252,7 +252,11 @@ public class BayzrIssuesLoaderSensor implements Sensor {
                 //err_rule = sev;
                 err_rule = "BayZRRule_Low";
            }
-           BayzrError dbError = new BayzrError(err_rule, desc, file, pos);
+           File file_obj = new File(".");
+           String base = file_obj.getAbsolutePath();
+           String relative = new File(base).toURI().relativize(new File(file).toURI()).getPath();
+           //LOGGER.info("Processing file: " + relative);
+           BayzrError dbError = new BayzrError(err_rule, desc, relative, pos);
            fndIssuesList.add(dbError);
         }
         rs.close();
