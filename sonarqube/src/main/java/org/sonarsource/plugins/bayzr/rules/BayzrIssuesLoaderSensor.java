@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.sql.*;
+import java.util.ArrayList;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -56,7 +57,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
     return REPORT_URL_KEY;
   }
 
-  protected String getReportURL() {
+  protected String getReportUrl() {
     String reportUrl = settings.getString(reportUrlKey());
     if (!StringUtils.isEmpty(reportUrl)) {
       return reportUrl;
@@ -239,20 +240,20 @@ public class BayzrIssuesLoaderSensor implements Sensor {
            int err_tp = rs.getInt("bayzr_err");
            int pos = rs.getInt("pos");
            String err_rule = "";
-           if sev=="" {
-             if err_tp==2 {
+           if (sev=="") {
+             if (err_tp==2) {
                 err_rule = "BayZRRule_High";
-             } else if err_tp==1 {
+             } else if (err_tp==1) {
                 err_rule = "BayZRRule_Medium";
              } else {
-                err_rule = "BayZRRule_Low"
+                err_rule = "BayZRRule_Low";
              }
            } else {
                 //err_rule = sev;
                 err_rule = "BayZRRule_Low";
            }
            BayzrError dbError = new BayzrError(err_rule, desc, file, pos);
-           fndIssuesList.add(dbError)
+           fndIssuesList.add(dbError);
         }
         rs.close();
         stmt.close();

@@ -13,9 +13,9 @@ public class SayHelloFromScanner implements Sensor {
 
   @Override
   public void execute(SensorContext context) {
-    if (context.settings().getString(BayzrProperties.DB_KEY)!="") {
+    if (context.settings().getString(BayzrProperties.DBPARAM_KEY)!="") {
       // print log only if property is set to true
-      Loggers.get(getClass()).info(context.settings().getString(BayzrProperties.DB_KEY));
+      Loggers.get(getClass()).info(context.settings().getString(BayzrProperties.DBPARAM_KEY));
     }
   }
 }

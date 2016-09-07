@@ -104,7 +104,6 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
                 INDEX file_name_I (file_name(32)),
                 INDEX err_type_I (err_type),
                 INDEX plugin_I (plugin(12)),
-                INDEX number_I (number),
                 INDEX rec_type_I (rec_type),
                 INDEX build_number_I (build_number))`); err != nil {
 			return err

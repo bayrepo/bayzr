@@ -29,19 +29,19 @@ public class BayzrProperties {
       PropertyDefinition.builder(DBUS_KEY)
         .name("User")
         .description("Db connevtion parameters")
-        .defaultValue(String.valueOf(false))
+        .defaultValue("bayzr")
         .category(CATEGORY)
         .build(),
       PropertyDefinition.builder(DBPS_KEY)
         .name("Password")
         .description("Db connevtion parameters")
-        .defaultValue(String.valueOf(false))
+        .defaultValue("bayzr")
         .category(CATEGORY)
         .build(),
       PropertyDefinition.builder(DBPARAM_KEY)
         .name("JDBC URL")
         .description("Db connevtion parameters (URL)")
-        .defaultValue(String.valueOf(false))
+        .defaultValue("jdbc:mysql://localhost/bayzr")
         .category(CATEGORY)
         .build()
       );
