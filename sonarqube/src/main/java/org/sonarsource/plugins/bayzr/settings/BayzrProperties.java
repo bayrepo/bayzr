@@ -8,8 +8,10 @@ import org.sonar.api.config.PropertyDefinition;
 
 public class BayzrProperties {
 
-  public static final String DB_KEY = "sonar.bayzr.jdbcdriver";
   public static final String DBPARAM_KEY = "sonar.bayzr.url";
+  public static final String DBUS_KEY = "sonar.bayzr.user";
+  public static final String DBPS_KEY = "sonar.bayzr.pass";
+  public static final String SUFFIXES_KEY = "sonar.bayzr.files";
   public static final String CATEGORY = "bayzr";
 
   private BayzrProperties() {
@@ -18,8 +20,20 @@ public class BayzrProperties {
 
   public static List<PropertyDefinition> definitions() {
     return asList(
-      PropertyDefinition.builder(DB_KEY)
-        .name("JDBC Driver")
+      PropertyDefinition.builder(SUFFIXES_KEY)
+        .name("List of checked files")
+        .description("List of checked files")
+        .defaultValue("cxx,.cpp,.cc,.c,.hxx,.hpp,.hh,.h")
+        .category(CATEGORY)
+        .build(),
+      PropertyDefinition.builder(DBUS_KEY)
+        .name("User")
+        .description("Db connevtion parameters")
+        .defaultValue(String.valueOf(false))
+        .category(CATEGORY)
+        .build(),
+      PropertyDefinition.builder(DBPS_KEY)
+        .name("Password")
         .description("Db connevtion parameters")
         .defaultValue(String.valueOf(false))
         .category(CATEGORY)

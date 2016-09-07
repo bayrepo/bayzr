@@ -415,4 +415,5 @@ func main() {
 		tpl := templater.MakeTemplater()
 		tpl.PropogateData(report, path, config)
 	}
+	DBase.FinalizeCurrentBuild()
 }

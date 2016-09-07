@@ -51,7 +51,22 @@ func (this *MySQLSaver) _executeSQLCpammnd(cmd string) error {
 }
 
 func (this *MySQLSaver) _checkAndCreateTables() error {
-	fnd, err := this._checkTable("bayzr_build_info")
+	fnd, err := this._checkTable("bayzr_last_check")
+	if err != nil {
+		return err
+	}
+	if fnd == false {
+		if err := this._executeSQLCpammnd(
+			`CREATE TABLE IF NOT EXISTS bayzr_last_check(
+		        id INTEGER  NOT NULL AUTO_INCREMENT, 
+		        checker VARCHAR(255), 
+		        last_build_id INTEGER, 
+		        PRIMARY KEY (id),
+		        UNIQUE KEY(checker))`); err != nil {
+			return err
+		}
+	}
+	fnd, err = this._checkTable("bayzr_build_info")
 	if err != nil {
 		return err
 	}
@@ -62,6 +77,7 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		        build_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
 		        autor_of_build VARCHAR(255), 
 		        name_of_build VARCHAR(255),
+		        completed int,
 		        PRIMARY KEY (id),
                 INDEX build_date_I (build_date),
                 INDEX autor_of_build_I (autor_of_build(15)))`); err != nil {
@@ -153,7 +169,7 @@ func (this *MySQLSaver) Finalize() {
 func (this *MySQLSaver) CreateCurrentBuild(author string, name_of_build string) error {
 	if this.ok == 1 {
 		res, err := this.db.Exec(`INSERT INTO bayzr_build_info(autor_of_build, 
-                                        name_of_build) VALUES(?,?)`, author, name_of_build)
+                                        name_of_build, completed) VALUES(?,?,0)`, author, name_of_build)
 		if err != nil {
 			return err
 		} else {
@@ -163,6 +179,16 @@ func (this *MySQLSaver) CreateCurrentBuild(author string, name_of_build string) 
 			} else {
 				this.current_build_id = id
 			}
+		}
+	}
+	return nil
+}
+
+func (this *MySQLSaver) FinalizeCurrentBuild() error {
+	if this.ok == 1 && this.current_build_id > 0 {
+		_, err := this.db.Exec(`UPDATE bayzr_build_info SET completed = 1 WHERE id = ?`, this.current_build_id)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

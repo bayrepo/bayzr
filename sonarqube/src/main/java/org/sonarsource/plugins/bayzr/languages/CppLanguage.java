@@ -14,7 +14,8 @@ public final class CppLanguage extends AbstractLanguage {
 
   public static final String NAME = "Cpp";
   public static final String KEY = "cpp";
-  public static final String FILE_SUFFIXES_PROPERTY_KEY = "sonar.cpp.file.suffixes";
+  //public static final String FILE_SUFFIXES_PROPERTY_KEY = "sonar.cpp.file.suffixes";
+  public static final String FILE_SUFFIXES_PROPERTY_KEY = "sonar.bayzr.files";
   public static final String DEFAULT_FILE_SUFFIXES = "cxx,.cpp,.cc,.c,.hxx,.hpp,.hh,.h";
 
   private final Settings settings;

@@ -3,6 +3,7 @@ package org.sonarsource.plugins.bayzr.rules;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.sql.*;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -29,7 +30,9 @@ public class BayzrIssuesLoaderSensor implements Sensor {
 
   private static final Logger LOGGER = Loggers.get(BayzrIssuesLoaderSensor.class);
 
-  protected static final String REPORT_PATH_KEY = "sonar.bayzr.reportPath";
+  protected static final String REPORT_USER_KEY = "sonar.bayzr.user";
+  protected static final String REPORT_PASS_KEY = "sonar.bayzr.pass";
+  protected static final String REPORT_URL_KEY = "sonar.bayzr.url";
 
   protected final Settings settings;
   protected final FileSystem fileSystem;
@@ -49,33 +52,66 @@ public class BayzrIssuesLoaderSensor implements Sensor {
     descriptor.onlyOnLanguage(CppLanguage.KEY);
   }
 
-  protected String reportPathKey() {
-    return REPORT_PATH_KEY;
+  protected String reportUrlKey() {
+    return REPORT_URL_KEY;
   }
 
-  protected String getReportPath() {
-    String reportPath = settings.getString(reportPathKey());
-    if (!StringUtils.isEmpty(reportPath)) {
-      return reportPath;
+  protected String getReportURL() {
+    String reportUrl = settings.getString(reportUrlKey());
+    if (!StringUtils.isEmpty(reportUrl)) {
+      return reportUrl;
     } else {
-      return null;
+      return "jdbc:mysql://localhost/bayzr";
+    }
+  }
+
+  protected String reportUserKey() {
+    return REPORT_USER_KEY;
+  }
+
+  protected String getReportUser() {
+    String reportUser = settings.getString(reportUserKey());
+    if (!StringUtils.isEmpty(reportUser)) {
+      return reportUser;
+    } else {
+      return "bayzr";
+    }
+  }
+
+  protected String reportPassKey() {
+    return REPORT_PASS_KEY;
+  }
+
+  protected String getReportPass() {
+    String reportPass = settings.getString(reportPassKey());
+    if (!StringUtils.isEmpty(reportPass)) {
+      return reportPass;
+    } else {
+      return "bayzr";
     }
   }
 
   @Override
   public void execute(final SensorContext context) {
-      this.context = context;
-      try {
-        parseAndSaveResults();
-      } catch (XMLStreamException e) {
+      if (!StringUtils.isEmpty(getReportUrl())&&!StringUtils.isEmpty(getReportUser())&&!StringUtils.isEmpty(getReportPass())){
+       this.context = context;
+       try {
+        String url = getReportUrl();
+        String user = getReportUser();
+        String pass = getReportPass();
+        parseAndSaveResults(url, user, pass);
+       } catch (XMLStreamException e) {
         throw new IllegalStateException("Unable to parse the provided BayZR info", e);
+       }
+      } else {
+        LOGGER.info("Empty URL or User or Password parameter");
       }
   }
 
-  protected void parseAndSaveResults() throws XMLStreamException {
-    LOGGER.info("(mock) Parsing 'BayZR' Analysis Results");
+  protected void parseAndSaveResults(String url, String user, String pass) throws XMLStreamException {
+    LOGGER.info("Parsing 'BayZR' Analysis Results");
     BayzrAnalysisResultsParser parser = new BayzrAnalysisResultsParser();
-    List<BayzrError> errors = parser.parse();
+    List<BayzrError> errors = parser.parse(url, user, pass);
     for (BayzrError error : errors) {
       getResourceAndSaveIssue(error);
     }
@@ -168,13 +204,78 @@ public class BayzrIssuesLoaderSensor implements Sensor {
 
   private class BayzrAnalysisResultsParser {
 
-    public List<BayzrError> parse() throws XMLStreamException {
+    public List<BayzrError> parse(String url, String user, String pass) throws XMLStreamException {
+      List<BayzrError> fndIssuesList = new ArrayList<BayzrError>();
+      Connection conn = null;
+      Statement stmt = null;
       LOGGER.info("Parsing file {}");
+      try{
+        Class.forName("com.mysql.jdbc.Driver");
+        LOGGER.info("Connecting to database...");
+        conn = DriverManager.getConnection(url,user,pass);
 
-      BayzrError fooError1 = new BayzrError("BayZRRule_High", "More precise description of the error", "chart.c", 54);
-      BayzrError fooError2 = new BayzrError("BayZRRule_Low", "More precise description of the error", "chart.c", 201);
+        LOGGER.info("Creating statement...");
+        stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select last_build_id from bayzr_last_check where checker='sonarqube'");
+        int last_build_id = 0;
 
-      return Arrays.asList(fooError1, fooError2);
+        while(rs.next()){
+           last_build_id  = rs.getInt("last_build_id");
+           LOGGER.info("Get last build id: " + last_build_id);
+           break;
+        }
+        rs.close();
+        if (last_build_id==0){
+           stmt.executeUpdate("insert into bayzr_last_check(checker, last_build_id) (select 'sonarqube', max(id) from bayzr_build_info where completed = 1)");
+        } else {
+           stmt.executeUpdate("update bayzr_last_check set last_build_id=(select max(id) from bayzr_build_info where completed = 1) where checker='sonarqube'");
+        }
+        String str_build = Integer.toString(last_build_id);
+        rs = stmt.executeQuery("select bayzr_err, severity, file, pos, descript from bayzr_err_list where build_number = (select max(id) from bayzr_build_info where completed = 1 and id >= " + str_build + ") order by file, pos");
+        while(rs.next()){
+           String sev = rs.getString("severity");
+           String file = rs.getString("file");
+           String desc = rs.getString("descript");
+           int err_tp = rs.getInt("bayzr_err");
+           int pos = rs.getInt("pos");
+           String err_rule = "";
+           if sev=="" {
+             if err_tp==2 {
+                err_rule = "BayZRRule_High";
+             } else if err_tp==1 {
+                err_rule = "BayZRRule_Medium";
+             } else {
+                err_rule = "BayZRRule_Low"
+             }
+           } else {
+                //err_rule = sev;
+                err_rule = "BayZRRule_Low";
+           }
+           BayzrError dbError = new BayzrError(err_rule, desc, file, pos);
+           fndIssuesList.add(dbError)
+        }
+        rs.close();
+        stmt.close();
+        conn.close();
+      }catch(SQLException se){
+        se.printStackTrace();
+      }catch(Exception e){
+        e.printStackTrace();
+      }finally{
+        try{
+         if(stmt!=null)
+            stmt.close();
+        }catch(SQLException se2){
+        }
+        try{
+         if(conn!=null)
+            conn.close();
+        }catch(SQLException se){
+         se.printStackTrace();
+        }
+      }
+
+      return fndIssuesList;
     }
   }
 
