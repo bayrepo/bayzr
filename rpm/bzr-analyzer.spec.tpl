@@ -20,13 +20,13 @@ BuildRequires: golang >= 1.6.2
 BuildRequires: golang-src >= 1.6.2
 BuildRequires: golang-bin >= 1.6.2
 
-BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel java-1.8.0-openjdk maven chkconfig 
+#BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel java-1.8.0-openjdk maven chkconfig 
 
-%if 0%{?rhel} < 7
-Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint
-%else
-Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint frama-c
-%endif
+#%if 0%{?rhel} < 7
+#Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint
+#%else
+#Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint frama-c
+#%endif
 
 
 %description
@@ -43,10 +43,10 @@ export PATH=$PATH:$GOPATH/bin
 
 /usr/bin/go build -o bin/bayzr main
 
-alternatives --install /usr/bin/java java /opt/jdk1.8.0_101/bin/java 2
-cd sonarqube
-mvn clean package
-cd ..
+#alternatives --install /usr/bin/java java /opt/jdk1.8.0_101/bin/java 2
+#cd sonarqube
+#mvn clean package
+#cd ..
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -80,7 +80,7 @@ install -D -p -m 644 rpm/gpl-3.0.txt %{buildroot}%{_datadir}/doc/%{pkgname}/LICE
 install -D -p -m 644 rpm/LICENSE_GOCUI %{buildroot}%{_datadir}/doc/%{pkgname}/LICENSE_GOCUI
 install -D -p -m 644 rpm/COPYRIGHT %{buildroot}%{_datadir}/doc/%{pkgname}/COPYRIGHT
 
-install -D -p -m 644 sonarqube/target/bayzr-plugin-0.0.1-rel1.jar %{buildroot}%{_datarootdir}/bzr.java/
+#install -D -p -m 644 sonarqube/target/bayzr-plugin-0.0.1-rel1.jar %{buildroot}%{_datarootdir}/bzr.java/
 
 %clean
 rm -rf $RPM_BUILD_ROOT
