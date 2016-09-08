@@ -207,8 +207,9 @@ func (this *ReporterContainer) saveAnalyzisDB() {
 				}
 
 				if quickCommentAnalysis(message.File, message.Line) == true {
+				    err_tp := getDangerLevel(value.GetListPlugin().GetResultLevels(message.Sev))
 					err := this.mysqldriver.InsertInfo(plugin_name, message.Sev, message.File,
-						message.Line, message.Message)
+						message.Line, message.Message, err_tp)
 					if err != nil {
 						fmt.Printf("Error of saving to database %s", err)
 					}
@@ -658,18 +659,24 @@ func (this *ReporterContainer) saveAnalyzisInfoDirectToDB() {
 		for _, list := range this.err_list_files[file_nm] {
 			for _, value := range list.List_strings {
 				if value.Value <= DANGER {
-					err := this.mysqldriver.InsertExtInfo(value.Plugin, file_nm, "", 1, "Low", value.Line, 0)
+				    err_val:=0
+				    if value.Value==WARNING {
+				        err_val = 1
+				    } else if value.Value==DANGER {
+				        err_val = 2
+				    }
+					err := this.mysqldriver.InsertExtInfo(value.Plugin, file_nm, "", 1, err_val, value.Line, 0)
 					if err != nil {
 						fmt.Printf("Error of saving to database %s", err)
 					}
 				} else {
-					err := this.mysqldriver.InsertExtInfo("", file_nm, value.Line, 0, "", "", value.Number)
+					err := this.mysqldriver.InsertExtInfo("", file_nm, value.Line, 0, 0, "", value.Number)
 					if err != nil {
 						fmt.Printf("Error of saving to database %s", err)
 					}
 				}
 			}
-			err := this.mysqldriver.InsertExtInfo("", file_nm, "", 2, "", "", 0)
+			err := this.mysqldriver.InsertExtInfo("", file_nm, "", 2, 0, "", 0)
 			if err != nil {
 				fmt.Printf("Error of saving to database %s", err)
 			}

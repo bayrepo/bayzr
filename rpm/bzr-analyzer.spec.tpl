@@ -20,6 +20,8 @@ BuildRequires: golang >= 1.6.2
 BuildRequires: golang-src >= 1.6.2
 BuildRequires: golang-bin >= 1.6.2
 
+BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel java-1.8.0-openjdk maven chkconfig 
+
 %if 0%{?rhel} < 7
 Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint
 %else
@@ -41,11 +43,17 @@ export PATH=$PATH:$GOPATH/bin
 
 /usr/bin/go build -o bin/bayzr main
 
+alternatives --install /usr/bin/java java /opt/jdk1.8.0_101/bin/java 2
+cd sonarqube
+mvn clean package
+cd ..
+
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/bzr.d
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/doc/%{pkgname}/
+mkdir -p $RPM_BUILD_ROOT%{_datarootdir}/bzr.java/
 
 install -D -p -m 755 bin/bayzr %{buildroot}%{_bindir}
 install -D -p -m 644 cfg/bzr.conf %{buildroot}%{_sysconfdir}
@@ -64,9 +72,15 @@ for f in cfg/*.tpl; do
 	install -D -p -m 644 $f %{buildroot}%{_sysconfdir}/bzr.d/$fn
     fi
 done
+for f in xml/*.xml; do
+    fn=$(basename "$f")
+    install -D -p -m 644 $f %{buildroot}%{_sysconfdir}/bzr.d/$fn
+done
 install -D -p -m 644 rpm/gpl-3.0.txt %{buildroot}%{_datadir}/doc/%{pkgname}/LICENSE
 install -D -p -m 644 rpm/LICENSE_GOCUI %{buildroot}%{_datadir}/doc/%{pkgname}/LICENSE_GOCUI
 install -D -p -m 644 rpm/COPYRIGHT %{buildroot}%{_datadir}/doc/%{pkgname}/COPYRIGHT
+
+install -D -p -m 644 sonarqube/target/bayzr-plugin-0.0.1-rel1.jar %{buildroot}%{_datarootdir}/bzr.java/
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -80,5 +94,6 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/bzr.conf
 %config(noreplace) %{_sysconfdir}/bzr.d/*.conf
 %{_sysconfdir}/bzr.d/*.tpl
+%{_datarootdir}/bzr.java/*.jar
 
 %changelog

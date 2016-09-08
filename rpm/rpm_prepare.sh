@@ -13,8 +13,11 @@ fi
 PRP_DIR="bayzr-$version"
 rm -rf "$PRP_DIR"
 mkdir -p "$PRP_DIR/bin"
+mkdir -p "$PRP_DIR/xml"
 cp -R ../cfg "$PRP_DIR"
 cp -R ../src "$PRP_DIR"
+cp -R ../sonarqube "$PRP_DIR"
+cp ../sonarqube/src/main/resources/bayzr/*.xml "$PRP_DIR/xml"
 mkdir -p "$PRP_DIR/rpm"
 
 cp ../rpm/COPYRIGHT "$PRP_DIR/rpm/"

@@ -5,12 +5,14 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"strings"
+	"rullerlist"
 )
 
 type MySQLSaver struct {
 	db               *sql.DB
 	ok               int
 	current_build_id int64
+	ruller *rullerlist.RullerList
 }
 
 func (this *MySQLSaver) getStringLength(str string, length int) string {
@@ -136,8 +138,9 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 	return nil
 }
 
-func (this *MySQLSaver) Init(config string) error {
+func (this *MySQLSaver) Init(config string, ruller_param *rullerlist.RullerList) error {
 	this.ok = 0
+	this.ruller = ruller_param
 	if config == "" {
 		return nil
 	}
@@ -194,11 +197,11 @@ func (this *MySQLSaver) FinalizeCurrentBuild() error {
 }
 
 func (this *MySQLSaver) InsertInfo(plugin string, severity string,
-	file_name string, position string, descr string) error {
+	file_name string, position string, descr string, err_type int) error {
 	if this.ok == 1 {
 		pos, _ := strconv.ParseInt(strings.Trim(position, " \n\t"), 10, 64)
 		_, err := this.db.Exec(`INSERT INTO bayzr_err_list(plugin, bayzr_err, 
-                                        severity, file, pos, descript, build_number) VALUES(?,0,?,?,?,?,?)`, this.getStringLength(plugin, 50), this.getStringLength(severity, 255),
+                                        severity, file, pos, descript, build_number) VALUES(?,?,?,?,?,?,?)`, this.getStringLength(plugin, 50), err_type, this.getStringLength(severity, 255),
 			file_name, pos, descr, this.current_build_id)
 		if err != nil {
 			return err
@@ -208,12 +211,13 @@ func (this *MySQLSaver) InsertInfo(plugin string, severity string,
 }
 
 func (this *MySQLSaver) InsertExtInfo(plugin string, file_name string, file_string string, rec_type int,
-	err_type string, descr string, file_pos int64) error {
+	err_type int, descr string, file_pos int64) error {
 	if this.ok == 1 {
+	    
 		_, err := this.db.Exec(`INSERT INTO bayzr_err_extend(plugin, file_name, file_string,
                                         rec_type, err_type, descript, build_number, file_pos) 
-                                        VALUES(?,?,?,?,0,?,?,?)`, this.getStringLength(plugin, 50), this.getStringLength(file_name, 255),
-			file_string, rec_type, descr, this.current_build_id, file_pos)
+                                        VALUES(?,?,?,?,?,?,?,?)`, this.getStringLength(plugin, 50), this.getStringLength(file_name, 255),
+			file_string, rec_type, err_type, descr, this.current_build_id, file_pos)
 		if err != nil {
 			return err
 		}

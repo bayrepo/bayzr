@@ -1,3 +1,6 @@
+* Thu Sep 08 2016 Alexey Berezhok <bayrepo.info@gmail.com> 0.1-13
+- Added building of Plugin for SonarQube
+
 * Wed Sep 07 2016 Alexey Berezhok <bayrepo.info@gmail.com> 0.1-12
 - Added saving results to MySQL
 

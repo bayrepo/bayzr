@@ -45,3 +45,4 @@ for f in ../cfg/*.tpl; do
         chmod 644 /etc/bzr.d/$fn
     fi
 done
+cp ../sonarqube/src/main/resources/bayzr/*.xml /etc/bzr.d/

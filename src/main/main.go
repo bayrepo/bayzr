@@ -37,6 +37,7 @@ import (
 	"strings"
 	"templater"
 	"visualmenu"
+	"rullerlist"
 )
 
 const APP_VERSION = "0.1"
@@ -95,6 +96,7 @@ func main() {
 
 	var err error
 	var list_of_analyzer_commands map[string][]string = map[string][]string{}
+	var ruller rullerlist.RullerList
 
 	if *versionFlag {
 		fmt.Println("Version:", APP_VERSION)
@@ -109,12 +111,14 @@ func main() {
 	//ищем стандартный конфигурационный файл
 	config.ReadConfig(configFile)
 	checker.MakePluginsList("/etc/" + plugin_dir)
+	ruller.GetSonarQubeRulesList("/etc/" + plugin_dir)
 	config.AddFndPath("/etc/" + plugin_dir + "/")
 	//ищем конфигурационный файл в домашней директории
 	var user_info *user.User
 	if user_info, err = user.Current(); err == nil {
 		config.ReadConfig(user_info.HomeDir + "/" + config_file_name)
 		checker.MakePluginsList(user_info.HomeDir + "/" + plugin_dir)
+		ruller.GetSonarQubeRulesList(user_info.HomeDir + "/" + plugin_dir)
 		config.AddFndPath(user_info.HomeDir + "/" + plugin_dir + "/")
 	}
 	//ищем конфигурационный файл в текущей диретории
@@ -124,6 +128,7 @@ func main() {
 		}
 		config.ReadConfig(currentPath + "/" + config_file_name)
 		checker.MakePluginsList(currentPath + "/" + plugin_dir)
+		ruller.GetSonarQubeRulesList(currentPath + "/" + plugin_dir)
 		config.AddFndPath(currentPath + "/" + plugin_dir + "/")
 	}
 	//дозаполняем дефолтными значениями если после чтения конфигурации ничего не нашлось
@@ -145,7 +150,7 @@ func main() {
 	}
 
 	var DBase mysqlsaver.MySQLSaver
-	dbErr := DBase.Init(config.Connector())
+	dbErr := DBase.Init(config.Connector(), &ruller)
 	if dbErr != nil {
 		fmt.Printf("DataBase saving error %s\n", dbErr)
 		os.Exit(1)
