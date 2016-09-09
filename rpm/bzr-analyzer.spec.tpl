@@ -53,7 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/bzr.d
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/doc/%{pkgname}/
-#mkdir -p $RPM_BUILD_ROOT%{_datarootdir}/bzr.java/
+mkdir -p $RPM_BUILD_ROOT%{_datarootdir}/bzr.java/
 
 install -D -p -m 755 bin/bayzr %{buildroot}%{_bindir}
 install -D -p -m 644 cfg/bzr.conf %{buildroot}%{_sysconfdir}
@@ -80,7 +80,7 @@ install -D -p -m 644 rpm/gpl-3.0.txt %{buildroot}%{_datadir}/doc/%{pkgname}/LICE
 install -D -p -m 644 rpm/LICENSE_GOCUI %{buildroot}%{_datadir}/doc/%{pkgname}/LICENSE_GOCUI
 install -D -p -m 644 rpm/COPYRIGHT %{buildroot}%{_datadir}/doc/%{pkgname}/COPYRIGHT
 
-#install -D -p -m 644 sonarqube/target/bayzr-plugin-0.0.1-rel1.jar %{buildroot}%{_datarootdir}/bzr.java/
+install -D -p -m 644 sonarqube/jar/bayzr-plugin-0.0.1-rel1.jar %{buildroot}%{_datarootdir}/bzr.java/
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -95,6 +95,6 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/bzr.d/*.conf
 %{_sysconfdir}/bzr.d/*.tpl
 %{_sysconfdir}/bzr.d/*.xml
-#%{_datarootdir}/bzr.java/*.jar
+%{_datarootdir}/bzr.java/*.jar
 
 %changelog

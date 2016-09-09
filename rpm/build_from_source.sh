@@ -45,4 +45,9 @@ for f in ../cfg/*.tpl; do
         chmod 644 /etc/bzr.d/$fn
     fi
 done
+for f in ../sonarqube/src/main/resources/bayzr/*.xml; do
+    fn=$(basename "$f")
+    cp $f /etc/bzr.d/$fn
+    chmod 644 /etc/bzr.d/$fn
+done
 cp ../sonarqube/src/main/resources/bayzr/*.xml /etc/bzr.d/
