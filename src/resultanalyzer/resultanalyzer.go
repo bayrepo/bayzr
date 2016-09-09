@@ -109,9 +109,9 @@ func (this *ResultAnalyzerConatiner) makeStringAnalysis(line string) {
 		if len(result) == len(fields) && isWtSpaceBg(line, this.chk.GetSpaces()) == false {
 			if fnd_end == true {
 				for key := range tmp_array {
-				    if tmp_array[key].Id=="" {
-				        tmp_array[key].Id = tmp_array[key].Message
-				    }
+					if strings.Trim(tmp_array[key].Id, " \n\r") == "" {
+						tmp_array[key].Id = strings.Trim(tmp_array[key].Message, " \n\r")
+					}
 					tmp_array[key].Message += "-->" + strings.Trim(tmp_descr, " \r\n")
 					tmp_array[key].Pos_link_file_line = append(tmp_array[key].Pos_link_file_line, fmt.Sprintf("%s:%s", pos_link_fl, pos_link_ln))
 				}
@@ -238,6 +238,9 @@ func (this *ResultAnalyzerConatiner) ParseResultOfCommand(cmd_in string, config 
 
 		if tmp_descr != "" && len(tmp_array) > 0 {
 			for key := range tmp_array {
+				if strings.Trim(tmp_array[key].Id, " \n\r") == "" {
+					tmp_array[key].Id = strings.Trim(tmp_array[key].Message, " \n\r")
+				}
 				tmp_array[key].Message += "-->" + strings.Trim(tmp_descr, " \r\n")
 			}
 			this.result_array = append(this.result_array, tmp_array...)

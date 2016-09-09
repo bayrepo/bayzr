@@ -3,16 +3,16 @@ package mysqlsaver
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"rullerlist"
 	"strconv"
 	"strings"
-	"rullerlist"
 )
 
 type MySQLSaver struct {
 	db               *sql.DB
 	ok               int
 	current_build_id int64
-	ruller *rullerlist.RullerList
+	ruller           *rullerlist.RullerList
 }
 
 func (this *MySQLSaver) getStringLength(str string, length int) string {
@@ -200,8 +200,12 @@ func (this *MySQLSaver) InsertInfo(plugin string, severity string,
 	file_name string, position string, descr string, err_type int) error {
 	if this.ok == 1 {
 		pos, _ := strconv.ParseInt(strings.Trim(position, " \n\t"), 10, 64)
+		sev := severity
+		if this.ruller.IsInList(severity) == false {
+			sev = ""
+		}
 		_, err := this.db.Exec(`INSERT INTO bayzr_err_list(plugin, bayzr_err, 
-                                        severity, file, pos, descript, build_number) VALUES(?,?,?,?,?,?,?)`, this.getStringLength(plugin, 50), err_type, this.getStringLength(severity, 255),
+                                        severity, file, pos, descript, build_number) VALUES(?,?,?,?,?,?,?)`, this.getStringLength(plugin, 50), err_type, this.getStringLength(sev, 255),
 			file_name, pos, descr, this.current_build_id)
 		if err != nil {
 			return err
@@ -213,7 +217,7 @@ func (this *MySQLSaver) InsertInfo(plugin string, severity string,
 func (this *MySQLSaver) InsertExtInfo(plugin string, file_name string, file_string string, rec_type int,
 	err_type int, descr string, file_pos int64) error {
 	if this.ok == 1 {
-	    
+
 		_, err := this.db.Exec(`INSERT INTO bayzr_err_extend(plugin, file_name, file_string,
                                         rec_type, err_type, descript, build_number, file_pos) 
                                         VALUES(?,?,?,?,?,?,?,?)`, this.getStringLength(plugin, 50), this.getStringLength(file_name, 255),

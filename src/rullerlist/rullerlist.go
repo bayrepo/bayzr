@@ -1,11 +1,11 @@
 package rullerlist
 
 import (
+	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
-	"encoding/xml"
-	"fmt"
 )
 
 type RullerList struct {
@@ -13,14 +13,13 @@ type RullerList struct {
 }
 
 type Root struct {
-	XMLName   xml.Name   `xml:"rules"`
-	Rules []Rule `xml:"rule>key"`
+	XMLName xml.Name `xml:"rules"`
+	Rules   []Rule   `xml:"rule>key"`
 }
 
 type Rule struct {
 	Key string `xml:",chardata"`
 }
-
 
 func (this *RullerList) IsInList(elem string) bool {
 	for _, val := range this.list {
@@ -67,4 +66,3 @@ func (this *RullerList) GetSonarQubeRulesList(dir_to_find string) {
 	}
 	return
 }
-

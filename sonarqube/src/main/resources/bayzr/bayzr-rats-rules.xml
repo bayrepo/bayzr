@@ -707,8 +707,8 @@
   </rule>
 
   <rule>
-    <key>StrCpy</key>
-    <name>StrCpy</name>
+    <key>strcpy</key>
+    <name>strcpy</name>
     <description>
       Check to be sure that the format string passed as argument 2 to
       this function call does not come from an untrusted source that could
@@ -717,7 +717,7 @@
       precision that could result in a buffer overflow.
     </description>
     <tag>security</tag>
-    <internalKey>config/StrCpy</internalKey>
+    <internalKey>config/strcpy</internalKey>
     <severity>MAJOR</severity>
     <type>CODE_SMELL</type>
     <remediationFunction>LINEAR</remediationFunction>
