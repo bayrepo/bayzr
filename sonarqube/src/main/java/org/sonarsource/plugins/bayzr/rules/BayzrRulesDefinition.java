@@ -22,7 +22,7 @@ public final class BayzrRulesDefinition implements RulesDefinition {
     return PATH_TO_RULES_XML;
   }
 
-  protected String rulesDefinitionFilePat_2h() {
+  protected String rulesDefinitionFilePath_2() {
     return PATH_TO_RULES_XML_2;
   }
 

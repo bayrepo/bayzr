@@ -249,8 +249,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
                 err_rule = "BayZRRule_Low";
              }
            } else {
-                //err_rule = sev;
-                err_rule = "BayZRRule_Low";
+                err_rule = sev;
            }
            File file_obj = new File(".");
            String base = file_obj.getAbsolutePath();

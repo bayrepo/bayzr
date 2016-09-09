@@ -208,7 +208,7 @@ func (this *ReporterContainer) saveAnalyzisDB() {
 
 				if quickCommentAnalysis(message.File, message.Line) == true {
 				    err_tp := getDangerLevel(value.GetListPlugin().GetResultLevels(message.Sev))
-					err := this.mysqldriver.InsertInfo(plugin_name, message.Sev, message.File,
+					err := this.mysqldriver.InsertInfo(plugin_name, message.Id, message.File,
 						message.Line, message.Message, err_tp)
 					if err != nil {
 						fmt.Printf("Error of saving to database %s", err)

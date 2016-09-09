@@ -53,7 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/bzr.d
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/doc/%{pkgname}/
-mkdir -p $RPM_BUILD_ROOT%{_datarootdir}/bzr.java/
+#mkdir -p $RPM_BUILD_ROOT%{_datarootdir}/bzr.java/
 
 install -D -p -m 755 bin/bayzr %{buildroot}%{_bindir}
 install -D -p -m 644 cfg/bzr.conf %{buildroot}%{_sysconfdir}
@@ -94,6 +94,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/bzr.conf
 %config(noreplace) %{_sysconfdir}/bzr.d/*.conf
 %{_sysconfdir}/bzr.d/*.tpl
-%{_datarootdir}/bzr.java/*.jar
+%{_sysconfdir}/bzr.d/*.xml
+#%{_datarootdir}/bzr.java/*.jar
 
 %changelog
