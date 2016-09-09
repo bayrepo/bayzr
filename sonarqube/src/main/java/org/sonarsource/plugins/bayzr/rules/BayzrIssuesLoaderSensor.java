@@ -231,7 +231,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
         } else {
            stmt.executeUpdate("update bayzr_last_check set last_build_id=(select max(id) from bayzr_build_info where completed = 1) where checker='sonarqube'");
         }
-        String str_build = Integer.toString(last_build_id);
+        String str_build = Integer.toString(last_build_id + 1);
         rs = stmt.executeQuery("select bayzr_err, severity, file, pos, descript from bayzr_err_list where build_number = (select max(id) from bayzr_build_info where completed = 1 and id >= " + str_build + ") order by file, pos");
         while(rs.next()){
            String sev = rs.getString("severity");
