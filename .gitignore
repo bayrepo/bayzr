@@ -6,3 +6,4 @@ src/github.com/
 cisetup/src/github.com/
 cisetup/src/mysqlsaver/
 cisetup/src/rullerlist/
+go-bindata/
