@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$1"=="--delete" ]; then
+if [ "$1" == "--delete" ]; then
     if [ -e /etc/bzr.conf ]; then
         rm -f /etc/bzr.conf
     fi
@@ -15,7 +15,7 @@ fi
 
 export GOROOT=/usr/lib/golang/
 export PATH=$PATH:$GOROOT/bin
-export GOPATH=$(pwd)/..
+export GOPATH=$(pwd)/..:$(pwd)/../cisetup:$(pwd)/../go-bindata
 export PATH=$PATH:$GOPATH/bin
 
 /usr/bin/go get github.com/jroimartin/gocui
@@ -51,3 +51,23 @@ for f in ../sonarqube/src/main/resources/bayzr/*.xml; do
     chmod 644 /etc/bzr.d/$fn
 done
 cp ../sonarqube/src/main/resources/bayzr/*.xml /etc/bzr.d/
+
+/usr/bin/go get -u github.com/jteeuwen/go-bindata/...
+/usr/bin/go get github.com/kisielk/errcheck
+/usr/bin/go get github.com/vaughan0/go-ini
+/usr/bin/go get github.com/gin-gonic/gin
+/usr/bin/go get github.com/gin-gonic/contrib
+/usr/bin/go get github.com/elazarl/go-bindata-assetfs
+
+/usr/bin/go get github.com/gorilla/context
+/usr/bin/go get github.com/gorilla/securecookie
+/usr/bin/go get github.com/garyburd/redigo/redis
+/usr/bin/go get github.com/gin-gonic/contrib/sessions
+/usr/bin/go get github.com/gin-gonic/contrib/static
+/usr/bin/go get github.com/gin-gonic/contrib/renders/multitemplate
+
+
+/usr/bin/go build -o ../bin/go-bindata ../src/github.com/jteeuwen/go-bindata/go-bindata
+
+../bin/go-bindata -o ../cisetup/src/data/data.go -pkg data ../cisetup/src/data ../cisetup/src/data/css ../cisetup/src/data/js ../cisetup/src/data/fonts
+/usr/bin/go build -o ../bin/citool ../cisetup/src/main/main.go

@@ -1,0 +1,40 @@
+name = CentOS
+release = 7
+
+gpg_key =  gpg/RPM-GPG-KEY-CentOS-7
+gpg_key ?= gpg/RPM-GPG-KEY-CentOS-Security-7
+gpg_key ?= gpg/repomd.xml.key
+
+packages = packages/${suite}.list
+
+[main]
+cachedir=/yumbootstrap/cache
+logfile=/yumbootstrap/log/yum.log
+keepcache=0
+debuglevel=2
+exactarch=1
+obsoletes=1
+installonly_limit=5
+proxy=http://127.0.0.1:3128
+
+[post_install]
+finalize = scripts/fix_rpmdb.py
+finalize = scripts/clean_yumbootstrap.py
+
+[repositories]
+centos         = http://mirror.centos.org/centos/7/os/$basearch/
+centos-updates = http://mirror.centos.org/centos/7/updates/$basearch/
+home_repo      = http://download.opensuse.org/repositories/home:/bayrepo/CentOS_7/
+
+
+[environment]
+HOME=/root
+TERM="$TERM" 
+PS1='\u:\w\$ ' 
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+
+[cache]
+cache_dir = /usr/share/yumbotstrapcache
+cache_expire = 2592000
+
+# vim:ft=dosini

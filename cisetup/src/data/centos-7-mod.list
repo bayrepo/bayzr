@@ -1,0 +1,54 @@
+# subset from @Core
+coreutils
+bash
+grep
+gawk
+basesystem
+rpm
+initscripts
+iproute
+
+# subset from @Base
+less
+make
+mktemp
+vim-minimal
+yum
+which
+#authconfig
+#dhclient
+chkconfig
+# graphical boot helper (used by initscripts)
+plymouth
+# ~root/.*
+rootfiles
+
+#utils
+bayzr
+pylint
+java-1.8.0-openjdk
+~/usr/local/sonar-scanner
+~/etc/resolv.conf
+gcc
+gcc-c++
+make
+cmake
+git
+bay-gcc61
+clang
+clang-analyzer
+cppcheck
+oclint
+rats
+splint
+frama-c
++/var/lib/mysql
++/usr/local/sonar
++/dev
++/proc
+
+# redhat-release
+centos-release
+
+# required to fix RPM DB
+/usr/bin/db_load
