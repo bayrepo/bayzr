@@ -38,9 +38,9 @@
 			<h2 class="form-signin-heading">
 				Добро пожаловать в управление заданиями анализатора кода BayZR
 			</h2>
-			{{if .IsError}}<div class="alert alert-danger">{{.ErrMSG}}</div>{{end}}
+			{{if .ErrMSG}}<div class="alert alert-danger">{{.ErrMSG}}</div>{{end}}
 			<div class="form-group">
-				<label for="InputLogin">логин</label>
+				<label for="InputLogin">Логин</label>
 				<input type="login" class="form-control" id="InputLogin" name="InputLogin" placeholder="Enter login" {{if .FormUser}}value="{{.FormUser}}"{{end}}/>
 			</div>
 			<div class="form-group">
@@ -51,7 +51,7 @@
 				<button type="submit" class="btn btn-primary" name="send" value="send">Отправить</button>
 			</div>
 			<div class="form-group">
-				<button type="submit" class="btn btn-link btn-block" name="register" value="register">Зарегистрироваться</button>
+				<a href="/register">Зарегистрироваться</a>
 			</div>
 		</form>
 	</body>

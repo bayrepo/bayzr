@@ -303,6 +303,78 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 				}
 			}
 		}
+		res, err = this.db.Exec(`INSERT INTO bayzr_RULE(name, 
+                                        description) VALUES('ru_task', 'Can create new project and watch the results')`)
+		if err != nil {
+			return err
+		}
+		ru_task, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
+		res, err = this.db.Exec(`INSERT INTO bayzr_RULE(name, 
+                                        description) VALUES('ru_result', 'Can watch the results')`)
+		if err != nil {
+			return err
+		}
+		ru_result, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
+		res, err = this.db.Exec(`INSERT INTO bayzr_RULE(name, 
+                                        description) VALUES('ru_norules', 'Only new user')`)
+		if err != nil {
+			return err
+		}
+		ru_norules, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
+
+		res2, err2 := this.db.Exec(`INSERT INTO bayzr_GROUP(name) VALUES('User Group')`)
+		if err2 != nil {
+			return err2
+		} else {
+			id2, err2 := res2.LastInsertId()
+			if err2 != nil {
+				return err2
+			} else {
+				_, err3 := this.db.Exec(`INSERT INTO bayzr_GROUP_RULE(grp_id, rule_id) VALUES(?, ?)`, id2, ru_norules)
+				if err3 != nil {
+					return err3
+				}
+			}
+		}
+
+		res2, err2 = this.db.Exec(`INSERT INTO bayzr_GROUP(name) VALUES('Viewer Group')`)
+		if err2 != nil {
+			return err2
+		} else {
+			id2, err2 := res2.LastInsertId()
+			if err2 != nil {
+				return err2
+			} else {
+				_, err3 := this.db.Exec(`INSERT INTO bayzr_GROUP_RULE(grp_id, rule_id) VALUES(?, ?)`, id2, ru_result)
+				if err3 != nil {
+					return err3
+				}
+			}
+		}
+
+		res2, err2 = this.db.Exec(`INSERT INTO bayzr_GROUP(name) VALUES('Developer Group')`)
+		if err2 != nil {
+			return err2
+		} else {
+			id2, err2 := res2.LastInsertId()
+			if err2 != nil {
+				return err2
+			} else {
+				_, err3 := this.db.Exec(`INSERT INTO bayzr_GROUP_RULE(grp_id, rule_id) VALUES(?, ?)`, id2, ru_task)
+				if err3 != nil {
+					return err3
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -489,4 +561,170 @@ func (this *MySQLSaver) GetUserInfo(id int) (error, string, string, string, int,
 		return err, "", "", "", 0, ""
 	}
 	return nil, st_login, st_name, st_email, st_grp_id, st_grp
+}
+
+func (this *MySQLSaver) IsDupUser(user string) (error, bool) {
+	stmtOut, err := this.db.Prepare(`SELECT t1.id FROM bayzr_USER as t1 
+	WHERE t1.login=?`)
+	if err != nil {
+		return err, true
+	}
+	defer stmtOut.Close()
+	var read_id int
+	err = stmtOut.QueryRow(user).Scan(&read_id)
+	if err != nil && err != sql.ErrNoRows {
+		return err, true
+	}
+	if err == sql.ErrNoRows {
+		return nil, false
+	} else {
+		return nil, true
+	}
+}
+
+func (this *MySQLSaver) InsertUser(login string, name string, email string, password string) (error, int) {
+	var id int64 = 0
+	if this.ok == 1 {
+		if err, id_tmp := this.GetGrpIdByName("User Group"); err != nil {
+			return err, 0
+		} else {
+			res, err2 := this.db.Exec(`INSERT INTO bayzr_USER(login, name, password, email, group_id) 
+                                        VALUES(?,?,?,?,?)`, login, name, password, email, id_tmp)
+			if err2 != nil {
+				return err2, 0
+			}
+
+			id, err = res.LastInsertId()
+			if err != nil {
+				return err, 0
+			}
+		}
+	}
+
+	return nil, int(id)
+}
+
+func (this *MySQLSaver) UpdateUser(id int, name string, email string, password string) error {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`UPDATE bayzr_USER SET name = ?, email = ? WHERE id = ?`,
+			name, email, id)
+		if err2 != nil {
+			return err2
+		}
+
+		if password != "" {
+			_, err2 := this.db.Exec(`UPDATE bayzr_USER SET password = ? WHERE id = ?`,
+				password, id)
+			if err2 != nil {
+				return err2
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (this *MySQLSaver) GetGrpIdByName(name string) (error, int) {
+	stmtOut, err := this.db.Prepare(`SELECT t1.id FROM bayzr_GROUP as t1 
+	WHERE t1.name=?`)
+	if err != nil {
+		return err, 0
+	}
+	defer stmtOut.Close()
+	var read_id int
+	err = stmtOut.QueryRow(name).Scan(&read_id)
+	if err != nil && err != sql.ErrNoRows {
+		return err, 0
+	}
+	if err == sql.ErrNoRows {
+		return nil, 0
+	} else {
+		return nil, read_id
+	}
+}
+
+func (this *MySQLSaver) GetUsersList() (error, int, [][]string) {
+	result := [][]string{}
+	counter := 0
+	stmtOut, err := this.db.Prepare(`SELECT t1.id, t1.login, t1.name, t1.email, 
+	t1.group_id, t2.name FROM bayzr_USER as t1 JOIN bayzr_GROUP as t2 on t1.group_id = t2.id 
+	WHERE t1.login <> 'su_admin' ORDER BY t1.login, t1.name`)
+	if err != nil {
+		return err, 0, result
+	}
+	defer stmtOut.Close()
+	rows, err := stmtOut.Query()
+	if err != nil && err != sql.ErrNoRows {
+		return err, 0, result
+	}
+	for rows.Next() {
+		var id string
+		var login string
+		var name string
+		var email string
+		var group_id string
+		var group_name string
+		if err := rows.Scan(&id, &login, &name, &email, &group_id, &group_name); err != nil {
+			return err, 0, [][]string{}
+		}
+		result = append(result, []string{id, login, name, email, group_id, group_name})
+		counter += 1
+	}
+	return err, counter, result
+}
+
+func (this *MySQLSaver) GetUsersCount() (error, int) {
+	counter := 0
+	stmtOut, err := this.db.Prepare(`SELECT count(*) FROM bayzr_USER`)
+	if err != nil {
+		return err, 0
+	}
+	defer stmtOut.Close()
+	err = stmtOut.QueryRow().Scan(&counter)
+	if err != nil && err != sql.ErrNoRows {
+		return err, 0
+	}
+	if err == sql.ErrNoRows {
+		return nil, 0
+	} else {
+		return nil, counter
+	}
+}
+
+func (this *MySQLSaver) GetGroups() (error, [][]string) {
+	result := [][]string{}
+	stmtOut, err := this.db.Prepare(`select t1.id, t1.name from bayzr_GROUP as t1 ORDER BY t1.name`)
+	if err != nil {
+		return err, result
+	}
+	defer stmtOut.Close()
+	rows, err := stmtOut.Query()
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var id string
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return err, [][]string{}
+		}
+		result = append(result, []string{id, name})
+	}
+	return err, result
+}
+
+func (this *MySQLSaver) UpdateUserGroup(id int, grp_id int) error {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`UPDATE bayzr_USER SET group_id = ? WHERE id = ?`,
+			grp_id, id)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
 }

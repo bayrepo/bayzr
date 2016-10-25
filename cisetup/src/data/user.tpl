@@ -55,7 +55,7 @@
 {{end}}
 					<li><a href="/logout">Выход</a></li>
 				</ul>
-				<p class="navbar-text navbar-right">Вы вошли как {{.User}}</p>
+				<p class="navbar-text navbar-right">Вы вошли как <a href="/welcome">{{.User}}</a></p>
 			</div>
 		</nav>
 
@@ -63,9 +63,9 @@
 			<div class="panel panel-default">
 				<div class="panel-heading">Форма параметров профиля</div>
 				<div class="panel-body">
-					<form role="form" action="/welcome" method="post">
+					<form role="form" action="/users/{{.UID}}" method="post">
 						<div class="form-group">
-							{{.User}}
+							{{.User_m}}
 						</div>
 						<div class="form-group{{if .InputName_err}} has-error{{end}}">
 							<label for="InputName">Имя</label>
@@ -87,44 +87,17 @@
 							{{if .InputPassword2_err}}<span class="help-block">{{.InputPassword2_err}}</span>{{end}}
 						</div>
 						<div class="form-group">
-							Группа: {{.Group}} Права:
-							{{range .Rules}}
-							<span class="label label-primary">{{.}}</span>
+							<label for="GroupInput">Группа</label>
+							<select class="form-control" id="GroupInput" name="GroupInput">
+							{{range .Groups}}
+							<option value="{{index . 0}}" {{if eq (index . 0) $.Group_ID}}selected{{end}}>{{index . 1}}</option>
 							{{end}}
+							</select>
 						</div>
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>
 				</div>
 			</div>
-{{if or .ru_task .ru_result .ru_admin}}
-			<div class="row">
-{{if or .ru_task .ru_admin}}
-				<div class="{{if .ru_admin}}col-md-4{{else}}col-md-6{{end}} text-center">
-					<div class="panel panel-default">
-						<div class="panel-body">
-							Число проектов: {{.TaskCount}}
-						</div>
-					</div>
-				</div>
-{{end}}
-				<div class="{{if .ru_admin}}col-md-4{{else}}{{if .ru_task}}col-md-6{{else}}col-md-12{{end}}{{end}} text-center">
-					<div class="panel panel-default">
-						<div class="panel-body">
-							Число задач: {{.JobCount}}
-						</div>
-					</div>
-				</div>
-{{if or .ru_admin}}
-				<div class="col-md-4 text-center">
-					<div class="panel panel-default">
-						<div class="panel-body">
-							Число пользователей: {{.UserCount}}
-						</div>
-					</div>
-				</div>
-{{end}}
-			</div>
-{{end}}
 		</div>
 		<div class="panel-footer">Утилита управления заданиями анализатора кода BayZR &copy; Alexey Berezhok</div>
 
