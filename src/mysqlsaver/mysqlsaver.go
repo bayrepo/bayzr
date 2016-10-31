@@ -1,9 +1,12 @@
 package mysqlsaver
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"rullerlist"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -13,6 +16,12 @@ type MySQLSaver struct {
 	ok               int
 	current_build_id int64
 	ruller           *rullerlist.RullerList
+}
+
+func randToken() string {
+	b := make([]byte, 30)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
 }
 
 func (this *MySQLSaver) getStringLength(str string, length int) string {
@@ -151,6 +160,7 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		        password CHAR(35),
 		        email VARCHAR(255),
 		        group_id INTEGER,
+		        api_auth_tocken VARCHAR(30),
 		        PRIMARY KEY (id),
                 INDEX USER_group_id_I (group_id),
                 INDEX USER_login_I (login(20)),
@@ -216,16 +226,16 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		        source VARCHAR(255),
 		        pkgs_list TEXT,
 		        build_cmds TEXT,
-		        project_id VARCHAR(255),
-		        auth_id VARCHAR(255),
-		        period INTEGER,
-		        start_time TIMESTAMP,
+		        period CHAR(1),
+		        start_time VARCHAR(20),
 		        user_id INTEGER,
+		        check_config TEXT,
+		        users_list TEXT,
+		        auth_tocken VARCHAR(30),
 		        PRIMARY KEY (id),
                 INDEX TASK_name_I (name(20)),
                 INDEX TASK_task_type_I (task_type),
                 INDEX TASK_source_I (source(32)),
-                INDEX TASK_project_id_I (project_id(32)),
                 INDEX TASK_user_id_I (user_id))`); err != nil {
 			return err
 		}
@@ -293,8 +303,9 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		                       name,
 		                       password,
 		                       email,
-		                       group_id
-							) VALUES('su_admin', 'Admin User', '952f25e4337a61dee0cfa41e956e0124', 'admin@admin', ?)`, id2)
+		                       group_id,
+		                       api_auth_tocken
+							) VALUES('su_admin', 'Admin User', '952f25e4337a61dee0cfa41e956e0124', 'admin@admin', ?, ?)`, id2, randToken())
 							if err4 != nil {
 								return err4
 							}
@@ -543,12 +554,12 @@ func (this *MySQLSaver) GetUserPerms(id int) (error, [][]string) {
 	return err, result
 }
 
-func (this *MySQLSaver) GetUserInfo(id int) (error, string, string, string, int, string) {
-	stmtOut, err := this.db.Prepare(`SELECT t1.login, t1.name, t1.email, t2.id, t2.name 
+func (this *MySQLSaver) GetUserInfo(id int) (error, string, string, string, int, string, string) {
+	stmtOut, err := this.db.Prepare(`SELECT t1.login, t1.name, t1.email, t2.id, t2.name, t1.api_auth_tocken 
 	FROM bayzr_USER as t1 join bayzr_GROUP as t2 on t1.group_id = t2.id
 	WHERE t1.id = ?`)
 	if err != nil {
-		return err, "", "", "", 0, ""
+		return err, "", "", "", 0, "", ""
 	}
 	defer stmtOut.Close()
 	var st_login string
@@ -556,11 +567,12 @@ func (this *MySQLSaver) GetUserInfo(id int) (error, string, string, string, int,
 	var st_email string
 	var st_grp_id int
 	var st_grp string
-	err = stmtOut.QueryRow(id).Scan(&st_login, &st_name, &st_email, &st_grp_id, &st_grp)
+	var st_tocken string
+	err = stmtOut.QueryRow(id).Scan(&st_login, &st_name, &st_email, &st_grp_id, &st_grp, &st_tocken)
 	if err != nil {
-		return err, "", "", "", 0, ""
+		return err, "", "", "", 0, "", ""
 	}
-	return nil, st_login, st_name, st_email, st_grp_id, st_grp
+	return nil, st_login, st_name, st_email, st_grp_id, st_grp, st_tocken
 }
 
 func (this *MySQLSaver) IsDupUser(user string) (error, bool) {
@@ -588,8 +600,8 @@ func (this *MySQLSaver) InsertUser(login string, name string, email string, pass
 		if err, id_tmp := this.GetGrpIdByName("User Group"); err != nil {
 			return err, 0
 		} else {
-			res, err2 := this.db.Exec(`INSERT INTO bayzr_USER(login, name, password, email, group_id) 
-                                        VALUES(?,?,?,?,?)`, login, name, password, email, id_tmp)
+			res, err2 := this.db.Exec(`INSERT INTO bayzr_USER(login, name, password, email, group_id, api_auth_tocken) 
+                                        VALUES(?,?,?,?,?,?)`, login, name, password, email, id_tmp, randToken())
 			if err2 != nil {
 				return err2, 0
 			}
@@ -649,7 +661,7 @@ func (this *MySQLSaver) GetUsersList() (error, int, [][]string) {
 	result := [][]string{}
 	counter := 0
 	stmtOut, err := this.db.Prepare(`SELECT t1.id, t1.login, t1.name, t1.email, 
-	t1.group_id, t2.name FROM bayzr_USER as t1 JOIN bayzr_GROUP as t2 on t1.group_id = t2.id 
+	t1.group_id, t2.name, t1.api_auth_tocken FROM bayzr_USER as t1 JOIN bayzr_GROUP as t2 on t1.group_id = t2.id 
 	WHERE t1.login <> 'su_admin' ORDER BY t1.login, t1.name`)
 	if err != nil {
 		return err, 0, result
@@ -666,13 +678,37 @@ func (this *MySQLSaver) GetUsersList() (error, int, [][]string) {
 		var email string
 		var group_id string
 		var group_name string
-		if err := rows.Scan(&id, &login, &name, &email, &group_id, &group_name); err != nil {
+		var st_tocken string
+		if err := rows.Scan(&id, &login, &name, &email, &group_id, &group_name, &st_tocken); err != nil {
 			return err, 0, [][]string{}
 		}
-		result = append(result, []string{id, login, name, email, group_id, group_name})
+		result = append(result, []string{id, login, name, email, group_id, group_name, st_tocken})
 		counter += 1
 	}
 	return err, counter, result
+}
+
+func (this *MySQLSaver) GetUsersTokenLists() (error, [][]string) {
+	result := [][]string{}
+	stmtOut, err := this.db.Prepare(`SELECT t1.login, t1.api_auth_tocken 
+	FROM bayzr_USER as t1 ORDER BY t1.login`)
+	if err != nil {
+		return err, result
+	}
+	defer stmtOut.Close()
+	rows, err := stmtOut.Query()
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var login string
+		var tocken string
+		if err := rows.Scan(&login, &tocken); err != nil {
+			return err, [][]string{}
+		}
+		result = append(result, []string{login, tocken})
+	}
+	return err, result
 }
 
 func (this *MySQLSaver) GetUsersCount() (error, int) {
@@ -727,4 +763,93 @@ func (this *MySQLSaver) UpdateUserGroup(id int, grp_id int) error {
 	}
 
 	return nil
+}
+
+func (this *MySQLSaver) DelUser(id int) error {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`DELETE FROM bayzr_USER WHERE id = ?`, id)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
+}
+
+func (this *MySQLSaver) GetPackages() (error, []string) {
+	result := []string{}
+	stmtOut, err := this.db.Prepare(`select pkgs_list from bayzr_TASK`)
+	if err != nil {
+		return err, result
+	}
+	defer stmtOut.Close()
+	rows, err := stmtOut.Query()
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var pkgs_list string
+		if err := rows.Scan(&pkgs_list); err != nil {
+			return err, []string{}
+		}
+		result = append(result, strings.Split(pkgs_list, ",")...)
+	}
+	sort.Strings(result)
+	return err, result
+}
+
+func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git string, new_pkgs []string,
+	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string) (error, int) {
+	var id int64 = 0
+	if this.ok == 1 {
+		task_type := Ttype[0]
+		pkgs_list := ""
+		if len(old_pkgs) > 0 {
+			pkgs_list += strings.Join(old_pkgs, ",")
+		}
+		if len(new_pkgs) > 0 {
+			c_list := []string{}
+			for _, val := range new_pkgs {
+				fnd := false
+				for _, o_val := range old_pkgs {
+					if o_val == val {
+						fnd = true
+						break
+					}
+				}
+				if fnd == false {
+					c_list = append(c_list, val)
+				}
+			}
+			if len(c_list) > 0 {
+				if pkgs_list != "" {
+					pkgs_list = pkgs_list + "," + strings.Join(c_list, ",")
+				} else {
+					pkgs_list = strings.Join(c_list, ",")
+				}
+			}
+		}
+		per_type := Ptype[0]
+		res, err2 := this.db.Exec(`INSERT INTO bayzr_TASK(name, task_type, source, pkgs_list,
+										build_cmds, period, start_time, user_id, check_config,
+										users_list, auth_tocken) 
+                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, task_type, git, pkgs_list,
+			strings.Join(cmds, "\n"), per_type, period, owner_id,
+			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken())
+		if err2 != nil {
+			return err2, 0
+		}
+
+		var err error
+		id, err = res.LastInsertId()
+		if err != nil {
+			return err, 0
+		}
+
+	}
+
+	return nil, int(id)
+
 }

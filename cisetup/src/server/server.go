@@ -91,6 +91,11 @@ func (this *CiServer) LoadTemplates() (multitemplate.Render, error) {
 		return templates, err
 	}
 	templates.AddFromString("user", string(html_resource))
+	html_resource, err = data.Asset("../cisetup/src/data/task.tpl")
+	if err != nil {
+		return templates, err
+	}
+	templates.AddFromString("task", string(html_resource))
 	return templates, nil
 }
 
@@ -131,6 +136,11 @@ func (this *CiServer) Run(port int, conf string) error {
 	if dbErr != nil {
 		return fmt.Errorf("DataBase saving error %s\n", dbErr)
 	}
+	err_tock, tockens := con.GetUsersTokenLists()
+	if err_tock != nil {
+		return fmt.Errorf("DataBase saving error %s\n", err_tock)
+	}
+
 	con.Finalize()
 
 	router := gin.Default()
@@ -145,6 +155,8 @@ func (this *CiServer) Run(port int, conf string) error {
 	router.Use(sessions.Sessions("bayzr-session", this.ses))
 	router.Use(static.Serve("/css", BinaryFileSystem("../cisetup/src/data/css/")))
 	router.Use(static.Serve("/js", BinaryFileSystem("../cisetup/src/data/js/")))
+	router.Use(static.Serve("/js/i18n", BinaryFileSystem("../cisetup/src/data/js/i18n")))
+	router.Use(static.Serve("/i18n", BinaryFileSystem("../cisetup/src/data/js/i18n")))
 	router.Use(static.Serve("/fonts", BinaryFileSystem("../cisetup/src/data/fonts/")))
 
 	router.GET("/", this.root)
@@ -161,6 +173,20 @@ func (this *CiServer) Run(port int, conf string) error {
 	router.GET("/users", this.users)
 	router.GET("/users/:uid", this.user)
 	router.POST("/users/:uid", this.user)
+
+	router.GET("/user/del/:uid", this.userdel)
+
+	router.GET("/tasks/add", this.tasks)
+	router.POST("/tasks/add", this.tasks_post)
+
+	pass := gin.Accounts{}
+	for _, item := range tockens {
+		pass[item[0]] = item[1]
+	}
+
+	authorized := router.Group("/api", gin.BasicAuth(pass))
+
+	authorized.GET("/ping", this.ping)
 
 	router.Run(fmt.Sprintf(":%d", port))
 
@@ -278,7 +304,7 @@ func (this *CiServer) welcome(c *gin.Context) {
 		}
 	}
 
-	err, st_login, st_name, st_email, _, st_grp := con.GetUserInfo(sess_id.(int))
+	err, st_login, st_name, st_email, _, st_grp, st_tocken := con.GetUserInfo(sess_id.(int))
 	if err != nil {
 		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 		return
@@ -287,6 +313,7 @@ func (this *CiServer) welcome(c *gin.Context) {
 	hdr["Name"] = st_name
 	hdr["Email"] = st_email
 	hdr["Group"] = st_grp
+	hdr["Tocken"] = st_tocken
 	hdr["Rules"] = session.Get("perms").([]string)
 
 	err, cnt := con.GetUsersCount()
@@ -476,6 +503,7 @@ func (this *CiServer) user(c *gin.Context) {
 		c.Redirect(http.StatusSeeOther, "/users/")
 		return
 	}
+
 	var con mysqlsaver.MySQLSaver
 	dbErr := con.Init(this.config, nil)
 	if dbErr != nil {
@@ -484,7 +512,7 @@ func (this *CiServer) user(c *gin.Context) {
 	}
 	defer con.Finalize()
 
-	err, st_login, st_name, st_email, st_grp_id, st_grp := con.GetUserInfo(uid_number)
+	err, st_login, st_name, st_email, st_grp_id, st_grp, st_tocken := con.GetUserInfo(uid_number)
 	if err != nil {
 		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 		return
@@ -535,7 +563,7 @@ func (this *CiServer) user(c *gin.Context) {
 		}
 	}
 
-	err, st_login, st_name, st_email, st_grp_id, st_grp = con.GetUserInfo(uid_number)
+	err, st_login, st_name, st_email, st_grp_id, st_grp, st_tocken = con.GetUserInfo(uid_number)
 	if err != nil {
 		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 		return
@@ -546,6 +574,7 @@ func (this *CiServer) user(c *gin.Context) {
 	hdr["Name"] = st_name
 	hdr["Email"] = st_email
 	hdr["Group"] = st_grp
+	hdr["Tocken"] = st_tocken
 	hdr["Group_ID"] = fmt.Sprintf("%d", st_grp_id)
 
 	if err, grps := con.GetGroups(); err != nil {
@@ -557,4 +586,258 @@ func (this *CiServer) user(c *gin.Context) {
 	hdr["User"] = session.Get("login").(string)
 
 	c.HTML(200, "user", hdr)
+}
+
+func (this *CiServer) userdel(c *gin.Context) {
+	session := sessions.Default(c)
+	sess_id := session.Get("id")
+	if sess_id == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+	hdr := gin.H{}
+	if err := this.usePerms(session, []string{"ru_admin"}, &hdr); err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
+		return
+	}
+	uid := c.Param("uid")
+	uid_number, err := strconv.Atoi(uid)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/users/")
+		return
+	}
+
+	var con mysqlsaver.MySQLSaver
+	dbErr := con.Init(this.config, nil)
+	if dbErr != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", dbErr.Error()))
+		return
+	}
+	defer con.Finalize()
+
+	if err := con.DelUser(uid_number); err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, "/users")
+}
+
+func (this *CiServer) ping(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "alive", "status": http.StatusOK})
+}
+
+type TaskForm struct {
+	TaskName       string   `form:"TaskName"`
+	TaskType       string   `form:"TaskType"`
+	TaskGit        string   `form:"TaskGit"`
+	TaskPackGs     []string `form:"TaskPackGs"`
+	TaskPackGsEarl []string `form:"TaskPackGsEarl"`
+	TaskCmds       []string `form:"TaskCmds"`
+	TaskPerType    string   `form:"TaskPerType"`
+	TaskPeriod     string   `form:"TaskPeriod"`
+	TaskUsers      []string `form:"TaskUsers"`
+	TaskConfig     []string `form:"TaskConfig"`
+}
+
+func (this *CiServer) tasks(c *gin.Context) {
+	session := sessions.Default(c)
+	sess_id := session.Get("id")
+	if sess_id == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+	hdr := gin.H{}
+	if err := this.usePerms(session, []string{"ru_admin", "ru_task"}, &hdr); err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
+		return
+	}
+
+	var con mysqlsaver.MySQLSaver
+	dbErr := con.Init(this.config, nil)
+	if dbErr != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", dbErr.Error()))
+		return
+	}
+	defer con.Finalize()
+
+	err, pkg_lst := con.GetPackages()
+	if err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
+		return
+	}
+
+	p_pkg_list := [][]string{}
+	for _, val := range pkg_lst {
+		p_pkg_list = append(p_pkg_list, []string{val, ""})
+	}
+
+	err, _, u_list := con.GetUsersList()
+	if err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
+		return
+	}
+
+	p_u_list := [][]string{}
+	for _, val := range u_list {
+		p_u_list = append(p_u_list, []string{val[1], "", val[2]})
+	}
+	p_u_list = append(p_u_list, []string{"su_admin", "", "Admin"})
+
+	hdr["TaskName"] = ""
+	hdr["TaskType"] = "2"
+	hdr["TaskGit"] = ""
+	hdr["TaskPackGs"] = ""
+	hdr["TaskPackGsEarl"] = p_pkg_list
+	hdr["TaskCmds"] = ""
+	hdr["TaskPerType"] = "5"
+	hdr["TaskPeriod"] = ""
+	hdr["TaskUsers"] = p_u_list
+	hdr["TaskConfig"] = ""
+
+	hdr["User"] = session.Get("login").(string)
+
+	c.HTML(200, "task", hdr)
+}
+
+func (this *CiServer) tasks_post(c *gin.Context) {
+	session := sessions.Default(c)
+	sess_id := session.Get("id")
+	if sess_id == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+	hdr := gin.H{}
+	if err := this.usePerms(session, []string{"ru_admin", "ru_task"}, &hdr); err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
+		return
+	}
+
+	var con mysqlsaver.MySQLSaver
+	dbErr := con.Init(this.config, nil)
+	if dbErr != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", dbErr.Error()))
+		return
+	}
+	defer con.Finalize()
+
+	err, pkg_lst := con.GetPackages()
+	if err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
+		return
+	}
+
+	p_pkg_list := [][]string{}
+	for _, val := range pkg_lst {
+		p_pkg_list = append(p_pkg_list, []string{val, ""})
+	}
+
+	err, _, u_list := con.GetUsersList()
+	if err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
+		return
+	}
+
+	p_u_list := [][]string{}
+	for _, val := range u_list {
+		p_u_list = append(p_u_list, []string{val[1], "", val[2]})
+	}
+	p_u_list = append(p_u_list, []string{"su_admin", "", "Admin"})
+
+	hdr["TaskName"] = ""
+	hdr["TaskType"] = "2"
+	hdr["TaskGit"] = ""
+	hdr["TaskPackGs"] = ""
+	hdr["TaskPackGsEarl"] = p_pkg_list
+	hdr["TaskCmds"] = ""
+	hdr["TaskPerType"] = "5"
+	hdr["TaskPeriod"] = ""
+	hdr["TaskUsers"] = p_u_list
+	hdr["TaskConfig"] = ""
+
+	var form TaskForm
+	if c.Bind(&form) == nil {
+		fnd_err := false
+		if form.TaskName == "" {
+			hdr["TaskName_err"] = "Task name can't be empty"
+			fnd_err = true
+		} else {
+			hdr["TaskName"] = form.TaskName
+		}
+		hdr["TaskType"] = form.TaskType
+		if form.TaskGit == "" {
+			hdr["TaskGit_err"] = "Clonning command can't be empty"
+			fnd_err = true
+		} else {
+			hdr["TaskGit"] = form.TaskGit
+		}
+		if len(form.TaskPackGs) > 0 {
+			for _, val := range form.TaskPackGs {
+				fnd := false
+				for i, p_val := range p_pkg_list {
+					if p_val[0] == val {
+						p_pkg_list[i][1] = "selected"
+						fnd = true
+						break
+					}
+				}
+				if fnd == false {
+					p_pkg_list = append(p_pkg_list, []string{val, "selected"})
+				}
+			}
+		}
+		if len(form.TaskPackGsEarl) > 0 {
+			for _, val := range form.TaskPackGsEarl {
+				for i, p_val := range p_pkg_list {
+					if p_val[0] == val {
+						p_pkg_list[i][1] = "selected"
+						break
+					}
+				}
+			}
+		}
+		hdr["TaskPackGsEarl"] = p_pkg_list
+		hdr["TaskCmds"] = strings.Join(form.TaskCmds, "\n")
+		hdr["TaskPerType"] = form.TaskPerType
+		if form.TaskPeriod == "" && form.TaskPerType != "5" {
+			hdr["TaskPeriod_err"] = "Periid should by in format DD/MM/YYYY HH:MM:SS or type of period should be No period"
+			fnd_err = true
+		} else {
+			hdr["TaskPeriod"] = form.TaskPeriod
+		}
+		if len(form.TaskUsers) > 0 {
+			for _, val := range form.TaskUsers {
+				for i, p_val := range p_u_list {
+					if p_val[0] == val {
+						p_u_list[i][1] = "selected"
+						break
+					}
+				}
+			}
+		}
+		hdr["TaskUsers"] = p_u_list
+
+		if len(form.TaskConfig) == 0 {
+			hdr["TaskConfig_err"] = "Config for analyzer can't be empty"
+			fnd_err = true
+		} else {
+			hdr["TaskConfig"] = strings.Join(form.TaskConfig, "\n")
+		}
+
+		if fnd_err == false {
+			if err, _ := con.SaveTask(sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
+				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
+				form.TaskUsers, form.TaskConfig); err != nil {
+				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
+				return
+			} else {
+				c.Redirect(http.StatusSeeOther, "/tasks/")
+				return
+			}
+		}
+	}
+
+	hdr["User"] = session.Get("login").(string)
+
+	c.HTML(200, "task", hdr)
 }

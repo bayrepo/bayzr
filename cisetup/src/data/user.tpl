@@ -97,6 +97,9 @@
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>
 				</div>
+				<div>
+				   <a href="/user/del/{{.UID}}">Удалить</a>
+				</div>
 			</div>
 		</div>
 		<div class="panel-footer">Утилита управления заданиями анализатора кода BayZR &copy; Alexey Berezhok</div>

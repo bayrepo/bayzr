@@ -65,7 +65,7 @@
 				<div class="panel-body">
 					<form role="form" action="/welcome" method="post">
 						<div class="form-group">
-							{{.User}}
+							{{.User}}:{{.Tocken}}
 						</div>
 						<div class="form-group{{if .InputName_err}} has-error{{end}}">
 							<label for="InputName">Имя</label>
