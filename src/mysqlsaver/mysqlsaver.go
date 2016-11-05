@@ -71,7 +71,7 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 			`CREATE TABLE IF NOT EXISTS bayzr_last_check(
 		        id INTEGER  NOT NULL AUTO_INCREMENT, 
 		        checker VARCHAR(255), 
-		        last_build_id INTEGER, 
+		        last_build_id, 
 		        PRIMARY KEY (id),
 		        UNIQUE KEY(checker))`); err != nil {
 			return err
@@ -155,12 +155,12 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		if err := this._executeSQLCpammnd(
 			`CREATE TABLE IF NOT EXISTS bayzr_USER(
 		        id INTEGER  NOT NULL AUTO_INCREMENT, 
-		        login VARCHAR(255),
-		        name VARCHAR(255),
-		        password CHAR(35),
-		        email VARCHAR(255),
+		        login VARCHAR(255) DEFAULT "",
+		        name VARCHAR(255) DEFAULT "",
+		        password CHAR(35) DEFAULT "",
+		        email VARCHAR(255) DEFAULT "",
 		        group_id INTEGER,
-		        api_auth_tocken VARCHAR(30),
+		        api_auth_tocken VARCHAR(30) DEFAULT "",
 		        PRIMARY KEY (id),
                 INDEX USER_group_id_I (group_id),
                 INDEX USER_login_I (login(20)),
@@ -178,7 +178,7 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		if err := this._executeSQLCpammnd(
 			`CREATE TABLE IF NOT EXISTS bayzr_GROUP(
 		        id INTEGER  NOT NULL AUTO_INCREMENT, 
-		        name VARCHAR(255),
+		        name VARCHAR(255) DEFAULT "",
 		        PRIMARY KEY (id),
                 INDEX GROUP_name_I (name(20)))`); err != nil {
 			return err
@@ -192,8 +192,8 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		if err := this._executeSQLCpammnd(
 			`CREATE TABLE IF NOT EXISTS bayzr_RULE(
 		        id INTEGER  NOT NULL AUTO_INCREMENT, 
-		        name VARCHAR(10),
-		        description VARCHAR(255),
+		        name VARCHAR(10) DEFAULT "",
+		        description VARCHAR(255) DEFAULT "",
 		        PRIMARY KEY (id),
                 INDEX RULE_name_I (name(10)))`); err != nil {
 			return err
@@ -221,17 +221,17 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		if err := this._executeSQLCpammnd(
 			`CREATE TABLE IF NOT EXISTS bayzr_TASK(
 		        id INTEGER  NOT NULL AUTO_INCREMENT, 
-		        name VARCHAR(255),
-		        task_type CHAR(1),
-		        source VARCHAR(255),
-		        pkgs_list TEXT,
-		        build_cmds TEXT,
-		        period CHAR(1),
-		        start_time VARCHAR(20),
+		        name VARCHAR(255) DEFAULT "",
+		        task_type CHAR(1) DEFAULT "",
+		        source VARCHAR(255) DEFAULT "",
+		        pkgs_list TEXT DEFAULT "",
+		        build_cmds TEXT DEFAULT "",
+		        period CHAR(1) DEFAULT "",
+		        start_time VARCHAR(20) DEFAULT "",
 		        user_id INTEGER,
-		        check_config TEXT,
-		        users_list TEXT,
-		        auth_tocken VARCHAR(30),
+		        check_config TEXT DEFAULT "",
+		        users_list TEXT DEFAULT "",
+		        auth_tocken VARCHAR(30) DEFAULT "",
 		        PRIMARY KEY (id),
                 INDEX TASK_name_I (name(20)),
                 INDEX TASK_task_type_I (task_type),
@@ -249,15 +249,20 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 			`CREATE TABLE IF NOT EXISTS bayzr_JOBS(
 		        id INTEGER  NOT NULL AUTO_INCREMENT, 
 		        user_id INTEGER,
-		        job_name VARCHAR(255),
-		        commit VARCHAR(512),
-		        build_date_start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		        job_name VARCHAR(255) DEFAULT "",
+		        commit VARCHAR(512) DEFAULT "",
+		        create_date_start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		        build_date_start TIMESTAMP,
 		        build_date_end TIMESTAMP,
 		        build_id INTEGER,
+		        priority CHAR DEFAULT "",
 		        task_id INTEGER,
 		        PRIMARY KEY (id),
                 INDEX JOBS_user_id_I (user_id),
-                INDEX JOBS_task_id_id_I (task_id))`); err != nil {
+                INDEX JOBS_priority_I (priority),
+                INDEX JOBS_create_date_start_I (create_date_start),
+                INDEX JOBS_task_id_id_I (task_id),
+                INDEX JOBS_build_date_start_I (build_date_start))`); err != nil {
 			return err
 		}
 	}
@@ -796,13 +801,82 @@ func (this *MySQLSaver) GetPackages() (error, []string) {
 		}
 		result = append(result, strings.Split(pkgs_list, ",")...)
 	}
-	sort.Strings(result)
-	return err, result
+	result_prc := []string{}
+	for _, val := range result {
+		if strings.Trim(val, " ") == "" {
+			continue
+		}
+		fnd := false
+		for _, val_2 := range result_prc {
+			if strings.Trim(val, " ") == val_2 {
+				fnd = true
+				break
+			}
+		}
+		if fnd == false {
+			result_prc = append(result_prc, strings.Trim(val, " "))
+		}
+	}
+	sort.Strings(result_prc)
+	return err, result_prc
 }
 
 func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git string, new_pkgs []string,
 	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string) (error, int) {
 	var id int64 = 0
+	if this.ok == 1 {
+		task_type := Ttype
+		pkgs_list := ""
+		if len(old_pkgs) > 0 {
+			pkgs_list += strings.Join(old_pkgs, ",")
+		}
+		if len(new_pkgs) > 0 {
+			c_list := []string{}
+			for _, val := range new_pkgs {
+				fnd := false
+				for _, o_val := range old_pkgs {
+					if o_val == val {
+						fnd = true
+						break
+					}
+				}
+				if fnd == false {
+					c_list = append(c_list, val)
+				}
+			}
+			if len(c_list) > 0 {
+				if pkgs_list != "" {
+					pkgs_list = pkgs_list + "," + strings.Join(c_list, ",")
+				} else {
+					pkgs_list = strings.Join(c_list, ",")
+				}
+			}
+		}
+		per_type := Ptype
+		res, err2 := this.db.Exec(`INSERT INTO bayzr_TASK(name, task_type, source, pkgs_list,
+										build_cmds, period, start_time, user_id, check_config,
+										users_list, auth_tocken) 
+                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, task_type, git, pkgs_list,
+			strings.Join(cmds, "\n"), per_type, period, owner_id,
+			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken())
+		if err2 != nil {
+			return err2, 0
+		}
+
+		var err error
+		id, err = res.LastInsertId()
+		if err != nil {
+			return err, 0
+		}
+
+	}
+
+	return nil, int(id)
+
+}
+
+func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype string, git string, new_pkgs []string,
+	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string) error {
 	if this.ok == 1 {
 		task_type := Ttype[0]
 		pkgs_list := ""
@@ -832,17 +906,128 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 			}
 		}
 		per_type := Ptype[0]
-		res, err2 := this.db.Exec(`INSERT INTO bayzr_TASK(name, task_type, source, pkgs_list,
-										build_cmds, period, start_time, user_id, check_config,
-										users_list, auth_tocken) 
-                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, task_type, git, pkgs_list,
-			strings.Join(cmds, "\n"), per_type, period, owner_id,
-			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken())
+		_, err2 := this.db.Exec(`UPDATE bayzr_TASK SET name = ?, task_type = ?, source = ?, pkgs_list = ?,
+										build_cmds = ?, period = ?, start_time = ?, check_config = ?,
+										users_list = ? WHERE id = ?`, name, task_type, git, pkgs_list,
+			strings.Join(cmds, "\n"), per_type, period,
+			strings.Join(cfg, "\n"), strings.Join(users, ","), id)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
+
+}
+
+func (this *MySQLSaver) GetTasks() (error, [][]string) {
+	result := [][]string{}
+	stmtOut, err := this.db.Prepare(`select t1.id, t1.name, t1.task_type, t1.source, t1.pkgs_list,
+	t1.build_cmds, t1.period, t1.start_time, t2.name, t1.check_config, t1.users_list,
+	t1.auth_tocken from bayzr_TASK as t1 
+	join bayzr_USER as t2 on t1.user_id = t2.id order by t1.id`)
+	if err != nil {
+		return err, result
+	}
+	defer stmtOut.Close()
+	rows, err := stmtOut.Query()
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var (
+			t1_id           int
+			t1_task_type    string
+			t1_name         string
+			t1_source       string
+			t1_pkgs_list    string
+			t1_build_cmds   string
+			t1_period       string
+			t1_start_time   string
+			t2_name         string
+			t1_check_config string
+			t1_users_list   string
+			t1_auth_tocken  string
+		)
+		if err := rows.Scan(&t1_id, &t1_name, &t1_task_type, &t1_source, &t1_pkgs_list,
+			&t1_build_cmds, &t1_period, &t1_start_time, &t2_name, &t1_check_config, &t1_users_list,
+			&t1_auth_tocken); err != nil {
+			return err, [][]string{}
+		}
+		result = append(result, []string{fmt.Sprintf("%d", t1_id), t1_name, t1_task_type, t1_source, t1_pkgs_list,
+			t1_build_cmds, t1_period, t1_start_time, t2_name, t1_check_config, t1_users_list,
+			t1_auth_tocken})
+	}
+	return err, result
+}
+
+func (this *MySQLSaver) GetTask(id int) (error, []string) {
+
+	stmtOut, err := this.db.Prepare(`select t1.id, t1.name, t1.task_type, t1.source, t1.pkgs_list,
+	t1.build_cmds, t1.period, t1.start_time, t2.name, t1.check_config, t1.users_list,
+	t1.auth_tocken from bayzr_TASK as t1 
+	join bayzr_USER as t2 on t1.user_id = t2.id where t1.id = ?`)
+	if err != nil {
+		return err, []string{}
+	}
+	defer stmtOut.Close()
+
+	var (
+		t1_id           int
+		t1_name         string
+		t1_task_type    string
+		t1_source       string
+		t1_pkgs_list    string
+		t1_build_cmds   string
+		t1_period       string
+		t1_start_time   string
+		t2_name         string
+		t1_check_config string
+		t1_users_list   string
+		t1_auth_tocken  string
+	)
+
+	err = stmtOut.QueryRow(id).Scan(&t1_id, &t1_name, &t1_task_type, &t1_source, &t1_pkgs_list,
+		&t1_build_cmds, &t1_period, &t1_start_time, &t2_name, &t1_check_config, &t1_users_list,
+		&t1_auth_tocken)
+	if err != nil && err != sql.ErrNoRows {
+		return err, []string{}
+	}
+	if err == sql.ErrNoRows {
+		return nil, []string{}
+	} else {
+		return nil, []string{fmt.Sprintf("%d", t1_id), t1_name, t1_task_type, t1_source, t1_pkgs_list,
+			t1_build_cmds, t1_period, t1_start_time, t2_name, t1_check_config, t1_users_list,
+			t1_auth_tocken}
+	}
+
+}
+
+func (this *MySQLSaver) DelTask(id int) error {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`DELETE FROM bayzr_TASK WHERE id = ?`, id)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
+}
+
+func (this *MySQLSaver) InsertJob(owner_id int, name string, commit string, priority string, task_id int) (error, int) {
+	var id int64 = 0
+	if this.ok == 1 {
+
+		res, err2 := this.db.Exec(`INSERT INTO bayzr_JOBS(user_id, job_name, commit, priority, task_id) 
+                                        VALUES(?,?,?,?,?)`, owner_id, name, commit, priority, task_id)
 		if err2 != nil {
 			return err2, 0
 		}
-
 		var err error
+
 		id, err = res.LastInsertId()
 		if err != nil {
 			return err, 0
@@ -851,5 +1036,39 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 	}
 
 	return nil, int(id)
+}
 
+func (this *MySQLSaver) GetJobs() (error, [][]string) {
+	result := [][]string{}
+	stmtOut, err := this.db.Prepare(`select t1.id, t1.job_name, t1.commit, ifnull(t1.build_date_start,""), ifnull(t1.build_date_end,""),
+	ifnull(t1.build_id,0), t1.priority, t2.name, t3.name from bayzr_JOBS as t1 
+	join bayzr_USER as t2 on t1.user_id = t2.id join bayzr_TASK as t3 on t3.id = t1.task_id order by t1.id desc`)
+	if err != nil {
+		return err, result
+	}
+	defer stmtOut.Close()
+	rows, err := stmtOut.Query()
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var (
+			t1_id               int
+			t1_job_name         string
+			t1_commit           string
+			t1_build_date_start string
+			t1_build_date_end   string
+			t1_build_id         string
+			t1_priority        string
+			t2_user_name        string
+			t3_task_name        string
+		)
+		if err := rows.Scan(&t1_id, &t1_job_name, &t1_commit, &t1_build_date_start, &t1_build_date_end,
+			&t1_build_id, &t1_priority, &t2_user_name, &t3_task_name); err != nil {
+			return err, [][]string{}
+		}
+		result = append(result, []string{fmt.Sprintf("%d", t1_id), t1_job_name, t1_commit, t1_build_date_start, t1_build_date_end,
+			t1_build_id, t1_priority, t2_user_name, t3_task_name})
+	}
+	return err, result
 }

@@ -61,24 +61,46 @@
 
 		<div class="panel panel-default center-panel">
 
+                <a href="/tasks/add"><span class="glyphicon glyphicon-trash"></span>Создать новую задачу</a>
 				<table class="table table-striped">
 					<tr>
 						<th>#</th>
-						<th>Логин</th>
-						<th>Имя</th>
-						<th>Почта</th>
-						<th>Группа</th>
-						<th>Действия</th>
+						<th>Название</th>
+						<th>Тип</th>
+						<th>Хранилище</th>
+						<th>Пакеты</th>
+						<th>Команды</th>
+						<th>Период</th>
+						<th>Доступ</th>
+						<th>Конфигурация</th>
+						<th>Кто создал</th>
+						<th>Действие</th>
 					</tr>
-{{range .Users}}
+{{range .Tasks}}
 					<tr>
 						<td>{{index . 0}}</td>
 						<td>{{index . 1}}</td>
-						<td>{{index . 2}}</td>
+						<td>
+						{{if eq (index . 2) "1"}}SonarQube{{end}}
+						{{if eq (index . 2) "2"}}Commit Check{{end}}
+						</td>
 						<td>{{index . 3}}</td>
+						<td>{{index . 4}}</td>
 						<td>{{index . 5}}</td>
 						<td>
-							<a href="/users/{{index . 0}}">Изменить</a>
+						{{if eq (index . 6) "0"}}Ежеминутно{{end}}
+						{{if eq (index . 6) "1"}}Ежечасно{{end}}
+						{{if eq (index . 6) "2"}}Ежедневно{{end}}
+						{{if eq (index . 6) "3"}}Ежемесячно{{end}}
+						{{if eq (index . 6) "4"}}Один раз{{end}}
+						{{if eq (index . 6) "5"}}Без периода{{end}}
+						</td>
+						<td>{{index . 10}}</td>
+						<td>{{index . 9}}</td>
+						<td>{{index . 8}}</td>
+						<td>
+							<a href="/task/{{index . 0}}">Изменить</a>
+							<a href="/taskdel/{{index . 0}}">Удалить</a>
 						</td>
 					</tr>
 {{end}}

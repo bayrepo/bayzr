@@ -61,26 +61,33 @@
 
 		<div class="panel panel-default center-panel">
 
+                <a href="/job/add"><span class="glyphicon glyphicon-trash"></span>Создать новый процесс</a>
 				<table class="table table-striped">
 					<tr>
 						<th>#</th>
-						<th>Логин</th>
-						<th>Имя</th>
-						<th>Почта</th>
-						<th>Группа</th>
-						<th>Действия</th>
+						<th>Кто запустил</th>
+						<th>Задача</th>
+						<th>Приоритет</th>
+						<th>Детали исходного кода</th>
+						<th>Дата начала</th>
+						<th>Дата окончания</th>
+						<th>Результат</th>
+						<th>Вывод</th>
+						<th>Действие</th>
 					</tr>
-{{range .Users}}
-					<tr>
+{{range .Jobs}}
 						<td>{{index . 0}}</td>
-						<td>{{index . 1}}</td>
+						<td>{{index . 7}}</td>
+						<td>{{index . 8}}</td>
+						<td>{{index . 6}}</td>
 						<td>{{index . 2}}</td>
 						<td>{{index . 3}}</td>
-						<td>{{index . 5}}</td>
+						<td>{{index . 4}}</td>
+						<td>{{if ne (index . 5) "0"}}<a href="/result/{{index . 5}}">Результат</a>{{else}}Нет результата{{end}}</td>
+						<td>{{if ne (index . 5) "0"}}<a href="/output/{{index . 0}}">Вывод</a>{{else}}Нет вывода{{end}}</td>
 						<td>
-							<a href="/users/{{index . 0}}">Изменить</a>
+							<a href="/jobdel/{{index . 0}}">Удалить</a>
 						</td>
-					</tr>
 {{end}}
 				</table>
 		</div>	
