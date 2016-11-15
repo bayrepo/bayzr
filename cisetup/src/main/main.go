@@ -8,13 +8,16 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
+	"runner"
 	"server"
 	"sonarapi"
 	"strconv"
 	"strings"
 	"time"
+	"executor"
 )
 
 var db_passwd = "sonarPASS1234"
@@ -805,6 +808,15 @@ func SquidActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
+	
+	data5, err := data.Asset("../cisetup/src/data/addbayzr.py")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("/etc/yumbootstrap/suites/scripts/addbayzr.py", data5, 0755)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -825,10 +837,68 @@ func SquidActionDelete(parent interface{}) error {
 
 /* END: squid and yumbootstrap install */
 
+/* BEGIN: ciserver install */
+func CiActionInstall(parent interface{}) error {
+	this := parent.(*ActionSaver)
+	this.SetParam("ok", "ciserver")
+	err, _, _, _ := executeCommand(makeArgsFromString("yum install -y ciserver"))
+	if err != nil {
+		return err
+	}
+	this.SetParam("success", "ciserver")
+	err, _, _, _ = executeCommand(makeArgsFromString("systemctl enable ciserver"))
+	if err != nil {
+		return err
+	}
+	this.SetParam("success", "ciserver_en")
+
+	data0, err := data.Asset("../cisetup/src/data/sudoers")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("/etc/sudoers", data0, 0440)
+	if err != nil {
+		return err
+	}
+	
+	err, _, _, _ = executeCommand(makeArgsFromString("setcap cap_sys_chroot+ep /usr/sbin/chroot"))
+	if err != nil {
+		return err
+	}
+	
+	err, _, _, _ = executeCommand(makeArgsFromString("systemctl start ciserver"))
+	if err != nil {
+		return err
+	}
+	this.SetParam("success", "ciserver_st")
+	
+	return nil
+}
+
+func CiActionDelete(parent interface{}) error {
+	this := parent.(*ActionSaver)
+	if err := deactivationCommonCmd(this, "ciserver_st", "systemctl stop ciserver"); err != nil {
+		return err
+	}
+	if err := deactivationCommonCmd(this, "ciserver_en", "systemctl disable ciserver"); err != nil {
+		return err
+	}
+	if err := deactivationCommonCmd(this, "ciserver", "yum erase ciserver -y"); err != nil {
+		return err
+	}
+	return nil
+}
+
+/* END: ciserver install */
+
 var serverRun *bool
+var jobRunner uint64
+var taskRunner uint64
 
 func init() {
 	serverRun = flag.Bool("server-run", false, "Start program as server")
+	flag.Uint64Var(&jobRunner, "job-runner", 0, "Number of simultaneous tasks")
+	flag.Uint64Var(&taskRunner, "task", 0, "Number if task id to execute")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("    ciutil [options] cmd ...\n")
@@ -840,10 +910,30 @@ func init() {
 func main() {
 
 	if *serverRun == true {
-		var srv server.CiServer
-		if err := srv.Run(11000, "/etc/citool.ini"); err != nil {
+		var rnr runner.CiRunner
+		err := rnr.SelfRun("/etc/citool.ini")
+		if err == nil {
+			var srv server.CiServer
+			if err := srv.Run(11000, "/etc/citool.ini"); err != nil {
+				fmt.Println(err)
+			}
+		} else {
 			fmt.Println(err)
 		}
+		os.Exit(0)
+	}
+
+	if jobRunner > 0 {
+		var rnr runner.CiRunner
+		rnr.SetRunners(int64(jobRunner))
+		rnr.Run("/etc/citool.ini")
+		os.Exit(0)
+	}
+
+	if taskRunner > 0 {
+		log.Printf("Running task %d", taskRunner)
+		var ex executor.CiExec
+		ex.Run(int(taskRunner), "/etc/citool.ini")
 		os.Exit(0)
 	}
 
@@ -857,6 +947,7 @@ func main() {
 		actionsList = append(actionsList, MakeActionSaver("Install BayZR", BayZRActionInstall, BayZRActionDelete))
 		actionsList = append(actionsList, MakeActionSaver("Install SonarQube plugins", PluginActionInstall, PluginActionDelete))
 		actionsList = append(actionsList, MakeActionSaver("Install Squid and YumBootsTrap plugins", SquidActionInstall, SquidActionDelete))
+		actionsList = append(actionsList, MakeActionSaver("Install Ci Server", CiActionInstall, CiActionDelete))
 		break
 	case 2:
 		break

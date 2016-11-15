@@ -7,6 +7,8 @@ basesystem
 rpm
 initscripts
 iproute
+sudo
+shadow-utils
 
 # subset from @Base
 less

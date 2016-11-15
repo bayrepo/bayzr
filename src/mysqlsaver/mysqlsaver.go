@@ -1059,7 +1059,7 @@ func (this *MySQLSaver) GetJobs() (error, [][]string) {
 			t1_build_date_start string
 			t1_build_date_end   string
 			t1_build_id         string
-			t1_priority        string
+			t1_priority         string
 			t2_user_name        string
 			t3_task_name        string
 		)
@@ -1071,4 +1071,131 @@ func (this *MySQLSaver) GetJobs() (error, [][]string) {
 			t1_build_id, t1_priority, t2_user_name, t3_task_name})
 	}
 	return err, result
+}
+
+func (this *MySQLSaver) DelJob(id int) error {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`DELETE FROM bayzr_JOBS WHERE id = ?`, id)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
+}
+
+func (this *MySQLSaver) DetJobID() (error, int) {
+	stmtOut, err := this.db.Prepare(`select id from bayzr_JOBS where build_date_start=0 order by priority desc, create_date_start asc limit 1`)
+	if err != nil {
+		return err, 0
+	}
+	defer stmtOut.Close()
+	var id int
+	err = stmtOut.QueryRow().Scan(&id)
+	if err == sql.ErrNoRows {
+		return nil, 0
+	}
+	if err != nil {
+		return err, 0
+	}
+	return nil, id
+}
+
+func (this *MySQLSaver) InsertOutput(id int, message string) error {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`INSERT INTO bayzr_OUTPUT(job_id, line) 
+                                        VALUES(?,?)`, id, message)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
+}
+
+func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
+	if this.ok == 1 {
+
+		stmtOut, err := this.db.Prepare(`select t1.id, t1.user_id, t2.login, t2.name, t1.job_name, 
+			t1.commit, t3.name, t3.task_type, t3.source, t3.pkgs_list, t3.build_cmds, t3.check_config 
+			from bayzr_JOBS as t1 join bayzr_USER as t2 on t2.id = t1.user_id 
+			join bayzr_TASK as t3 on t3.id = t1.task_id where t1.id = ?`)
+		if err != nil {
+			return err, map[string]string{}
+		}
+		defer stmtOut.Close()
+
+		var (
+			t1_id           string
+			t1_user_id      string
+			t2_login        string
+			t2_name         string
+			t1_job_name     string
+			t1_commit       string
+			t3_name         string
+			t3_task_type    string
+			t3_source       string
+			t3_pkgs_list    string
+			t3_build_cmds   string
+			t3_check_config string
+		)
+
+		err = stmtOut.QueryRow(id).Scan(&t1_id, &t1_user_id, &t2_login, &t2_name, &t1_job_name,
+			&t1_commit, &t3_name, &t3_task_type, &t3_source, &t3_pkgs_list, &t3_build_cmds, &t3_check_config)
+		if err != nil && err != sql.ErrNoRows {
+			return err, map[string]string{}
+		}
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("Empty job"), map[string]string{}
+		} else {
+			res := map[string]string{
+				"id":        t1_id,
+				"user_id":   t1_user_id,
+				"login":     t2_login,
+				"name":      t2_name,
+				"job_name":  t1_job_name,
+				"commit":    t3_name,
+				"task_name": t3_name,
+				"task_type": t3_task_type,
+				"source":    t3_source,
+				"pkgs":      t3_pkgs_list,
+				"cmds":      t3_build_cmds,
+				"config":    t3_check_config,
+			}
+			return nil, res
+		}
+
+	}
+
+	return fmt.Errorf("No database connetion"), map[string]string{}
+}
+
+func (this *MySQLSaver) TakeJob(id int) error {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`update bayzr_JOBS set build_date_start = CURRENT_TIMESTAMP() where id = ?`, id)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
+}
+
+func (this *MySQLSaver) CompleteJob(id int) error {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`update bayzr_JOBS set build_date_end = CURRENT_TIMESTAMP() where id = ?`, id)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
 }

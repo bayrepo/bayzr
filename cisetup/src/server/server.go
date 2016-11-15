@@ -215,6 +215,8 @@ func (this *CiServer) Run(port int, conf string) error {
 	router.POST("/jobs/add", this.newjob_post)
 	router.GET("/job/add", this.newjob)
 	router.POST("/job/add", this.newjob_post)
+	
+	router.GET("/jobdel/:jid", this.jobdel)
 
 	pass := gin.Accounts{}
 	for _, item := range tockens {
@@ -1382,4 +1384,39 @@ func (this *CiServer) newjob_post(c *gin.Context) {
 	hdr["User"] = session.Get("login").(string)
 
 	c.HTML(200, "job", hdr)
+}
+
+func (this *CiServer) jobdel(c *gin.Context) {
+	session := sessions.Default(c)
+	sess_id := session.Get("id")
+	if sess_id == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+	hdr := gin.H{}
+	if err := this.usePerms(session, []string{"ru_admin", "ru_task"}, &hdr); err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
+		return
+	}
+	jid := c.Param("jid")
+	jid_number, err := strconv.Atoi(jid)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/procs/")
+		return
+	}
+
+	var con mysqlsaver.MySQLSaver
+	dbErr := con.Init(this.config, nil)
+	if dbErr != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", dbErr.Error()))
+		return
+	}
+	defer con.Finalize()
+
+	if err := con.DelJob(jid_number); err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, "/procs")
 }

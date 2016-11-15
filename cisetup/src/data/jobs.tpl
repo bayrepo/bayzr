@@ -76,6 +76,7 @@
 						<th>Действие</th>
 					</tr>
 {{range .Jobs}}
+                    <tr>
 						<td>{{index . 0}}</td>
 						<td>{{index . 7}}</td>
 						<td>{{index . 8}}</td>
@@ -88,6 +89,7 @@
 						<td>
 							<a href="/jobdel/{{index . 0}}">Удалить</a>
 						</td>
+					</tr>
 {{end}}
 				</table>
 		</div>	
