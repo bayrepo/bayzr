@@ -60,37 +60,16 @@
 		</nav>
 
 		<div class="panel panel-default center-panel">
-
-                <a href="/job/add"><span class="glyphicon glyphicon-trash"></span>Создать новый процесс</a>
-				<table class="table table-striped">
+		
+				<table class="table table-bordered">
 					<tr>
-						<th>#</th>
-						<th>Кто запустил</th>
-						<th>Задача</th>
-						<th>Приоритет</th>
-						<th>Описание</th>
-						<th>Детали исходного кода</th>
-						<th>Дата начала</th>
-						<th>Дата окончания</th>
-						<th>Результат</th>
-						<th>Вывод</th>
-						<th>Действие</th>
+						<th>Дата события</th>
+						<th>Информация</th>
 					</tr>
-{{range .Jobs}}
-                    <tr>
+{{range .out}}
+					<tr class="{{index . 2}}">
 						<td>{{index . 0}}</td>
-						<td>{{index . 7}}</td>
-						<td>{{index . 8}}</td>
-						<td>{{index . 6}}</td>
-						<td>{{index . 9}}</td>
-						<td>{{index . 2}}</td>
-						<td>{{index . 3}}</td>
-						<td>{{index . 4}}</td>
-						<td>{{if ne (index . 5) "0"}}<a href="/result/{{index . 5}}">Результат</a>{{else}}Нет результата{{end}}</td>
-						<td>{{if ne (index . 3) "0000-00-00 00:00:00"}}<a href="/output/{{index . 0}}">Вывод</a>{{else}}Нет вывода{{end}}</td>
-						<td>
-							<a href="/jobdel/{{index . 0}}">Удалить</a>
-						</td>
+						<td>{{index . 1}}/td>
 					</tr>
 {{end}}
 				</table>

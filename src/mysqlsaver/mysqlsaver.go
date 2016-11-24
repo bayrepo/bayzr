@@ -1,10 +1,12 @@
 package mysqlsaver
 
 import (
+	"bufio"
 	"crypto/rand"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"os"
 	"rullerlist"
 	"sort"
 	"strconv"
@@ -117,6 +119,21 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
                 INDEX plugin_I (plugin(12)),
                 INDEX rec_type_I (rec_type),
                 INDEX build_number_I (build_number))`); err != nil {
+			return err
+		}
+	}
+	fnd, err = this._checkTable("bayzr_err_extend_file")
+	if err != nil {
+		return err
+	}
+	if fnd == false {
+		if err := this._executeSQLCpammnd(
+			`CREATE TABLE IF NOT EXISTS bayzr_err_extend_file(
+		        id INTEGER  NOT NULL AUTO_INCREMENT, 
+		        file_string TEXT,
+		        build_number INTEGER,
+		        PRIMARY KEY (id),
+                INDEX build_number_I_file (build_number))`); err != nil {
 			return err
 		}
 	}
@@ -233,6 +250,7 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		        users_list TEXT,
 		        auth_tocken VARCHAR(30) DEFAULT "",
 		        use_branch INT DEFAULT 0,
+		        result_file VARCHAR(128) DEFAULT "result.html",
 		        PRIMARY KEY (id),
                 INDEX TASK_name_I (name(20)),
                 INDEX TASK_task_type_I (task_type),
@@ -491,14 +509,46 @@ func (this *MySQLSaver) InsertInfo(plugin string, severity string,
 
 func (this *MySQLSaver) InsertExtInfo(plugin string, file_name string, file_string string, rec_type int,
 	err_type int, descr string, file_pos int64) error {
-	if this.ok == 1 {
+	/*if this.ok == 1 {
 
-		_, err := this.db.Exec(`INSERT INTO bayzr_err_extend(plugin, file_name, file_string,
-                                        rec_type, err_type, descript, build_number, file_pos) 
-                                        VALUES(?,?,?,?,?,?,?,?)`, this.getStringLength(plugin, 50), this.getStringLength(file_name, 255),
-			file_string, rec_type, err_type, descr, this.current_build_id, file_pos)
-		if err != nil {
-			return err
+			_, err := this.db.Exec(`INSERT INTO bayzr_err_extend(plugin, file_name, file_string,
+	                                        rec_type, err_type, descript, build_number, file_pos)
+	                                        VALUES(?,?,?,?,?,?,?,?)`, this.getStringLength(plugin, 50), this.getStringLength(file_name, 255),
+				file_string, rec_type, err_type, descr, this.current_build_id, file_pos)
+			if err != nil {
+				return err
+			}
+		}*/
+	return nil
+}
+
+func (this *MySQLSaver) InsertExtInfoFromResult(file_path string, build_name string) error {
+	if this.ok == 1 {
+		berr, id := this.GetBuildId(build_name)
+		if berr != nil {
+			return berr
+		}
+		if id > 0 {
+
+			file, errf := os.Open(file_path)
+			if errf != nil {
+				return errf
+			}
+			defer file.Close()
+
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				_, err := this.db.Exec(`INSERT INTO bayzr_err_extend_file(file_string, build_number)
+	                                        VALUES(?,?)`, scanner.Text(), id)
+				if err != nil {
+					return err
+				}
+			}
+
+			if erre := scanner.Err(); erre != nil {
+				return erre
+			}
+
 		}
 	}
 	return nil
@@ -825,7 +875,7 @@ func (this *MySQLSaver) GetPackages() (error, []string) {
 }
 
 func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git string, new_pkgs []string,
-	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int) (error, int) {
+	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int, repname string) (error, int) {
 	var id int64 = 0
 	if this.ok == 1 {
 		task_type := Ttype
@@ -858,10 +908,10 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 		per_type := Ptype
 		res, err2 := this.db.Exec(`INSERT INTO bayzr_TASK(name, task_type, source, pkgs_list,
 										build_cmds, period, start_time, user_id, check_config,
-										users_list, auth_tocken, use_branch) 
-                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, task_type, git, pkgs_list,
+										users_list, auth_tocken, use_branch, result_file) 
+                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, task_type, git, pkgs_list,
 			strings.Join(cmds, "\n"), per_type, period, owner_id,
-			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken(), use_branch)
+			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken(), use_branch, repname)
 		if err2 != nil {
 			return err2, 0
 		}
@@ -879,7 +929,7 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 }
 
 func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype string, git string, new_pkgs []string,
-	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int) error {
+	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int, repname string) error {
 	if this.ok == 1 {
 		task_type := Ttype[0]
 		pkgs_list := ""
@@ -911,9 +961,9 @@ func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype stri
 		per_type := Ptype[0]
 		_, err2 := this.db.Exec(`UPDATE bayzr_TASK SET name = ?, task_type = ?, source = ?, pkgs_list = ?,
 										build_cmds = ?, period = ?, start_time = ?, check_config = ?,
-										users_list = ?, use_branch = ? WHERE id = ?`, name, task_type, git, pkgs_list,
+										users_list = ?, use_branch = ?, result_file = ? WHERE id = ?`, name, task_type, git, pkgs_list,
 			strings.Join(cmds, "\n"), per_type, period,
-			strings.Join(cfg, "\n"), strings.Join(users, ","), id, use_branch)
+			strings.Join(cfg, "\n"), strings.Join(users, ","), use_branch, repname, id)
 		if err2 != nil {
 			return err2
 		}
@@ -969,7 +1019,7 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 
 	stmtOut, err := this.db.Prepare(`select t1.id, t1.name, t1.task_type, t1.source, t1.pkgs_list,
 	t1.build_cmds, t1.period, t1.start_time, t2.name, t1.check_config, t1.users_list,
-	t1.auth_tocken, t1.use_branch from bayzr_TASK as t1 
+	t1.auth_tocken, t1.use_branch, t1.result_file from bayzr_TASK as t1 
 	join bayzr_USER as t2 on t1.user_id = t2.id where t1.id = ?`)
 	if err != nil {
 		return err, []string{}
@@ -990,11 +1040,12 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 		t1_users_list   string
 		t1_auth_tocken  string
 		t1_use_branch   string
+		t1_result_file  string
 	)
 
 	err = stmtOut.QueryRow(id).Scan(&t1_id, &t1_name, &t1_task_type, &t1_source, &t1_pkgs_list,
 		&t1_build_cmds, &t1_period, &t1_start_time, &t2_name, &t1_check_config, &t1_users_list,
-		&t1_auth_tocken, &t1_use_branch)
+		&t1_auth_tocken, &t1_use_branch, &t1_result_file)
 	if err != nil && err != sql.ErrNoRows {
 		return err, []string{}
 	}
@@ -1003,7 +1054,7 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 	} else {
 		return nil, []string{fmt.Sprintf("%d", t1_id), t1_name, t1_task_type, t1_source, t1_pkgs_list,
 			t1_build_cmds, t1_period, t1_start_time, t2_name, t1_check_config, t1_users_list,
-			t1_auth_tocken, t1_use_branch}
+			t1_auth_tocken, t1_use_branch, t1_result_file}
 	}
 
 }
@@ -1126,8 +1177,8 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 	if this.ok == 1 {
 
 		stmtOut, err := this.db.Prepare(`select t1.id, t1.user_id, t2.login, t2.name, t1.job_name, 
-			t1.commit, t3.name, t3.task_type, t3.source, t3.pkgs_list, t3.build_cmds, t3.check_config 
-			from bayzr_JOBS as t1 join bayzr_USER as t2 on t2.id = t1.user_id 
+			t1.commit, t3.name, t3.task_type, t3.source, t3.pkgs_list, t3.build_cmds, t3.check_config, 
+			t3.result_file from bayzr_JOBS as t1 join bayzr_USER as t2 on t2.id = t1.user_id 
 			join bayzr_TASK as t3 on t3.id = t1.task_id where t1.id = ?`)
 		if err != nil {
 			return err, map[string]string{}
@@ -1147,10 +1198,12 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 			t3_pkgs_list    string
 			t3_build_cmds   string
 			t3_check_config string
+			t3_result_file  string
 		)
 
 		err = stmtOut.QueryRow(id).Scan(&t1_id, &t1_user_id, &t2_login, &t2_name, &t1_job_name,
-			&t1_commit, &t3_name, &t3_task_type, &t3_source, &t3_pkgs_list, &t3_build_cmds, &t3_check_config)
+			&t1_commit, &t3_name, &t3_task_type, &t3_source, &t3_pkgs_list, &t3_build_cmds, &t3_check_config,
+			&t3_result_file)
 		if err != nil && err != sql.ErrNoRows {
 			return err, map[string]string{}
 		}
@@ -1158,18 +1211,19 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 			return fmt.Errorf("Empty job"), map[string]string{}
 		} else {
 			res := map[string]string{
-				"id":        t1_id,
-				"user_id":   t1_user_id,
-				"login":     t2_login,
-				"name":      t2_name,
-				"job_name":  t1_job_name,
-				"commit":    t1_commit,
-				"task_name": t3_name,
-				"task_type": t3_task_type,
-				"source":    t3_source,
-				"pkgs":      t3_pkgs_list,
-				"cmds":      t3_build_cmds,
-				"config":    t3_check_config,
+				"id":          t1_id,
+				"user_id":     t1_user_id,
+				"login":       t2_login,
+				"name":        t2_name,
+				"job_name":    t1_job_name,
+				"commit":      t1_commit,
+				"task_name":   t3_name,
+				"task_type":   t3_task_type,
+				"source":      t3_source,
+				"pkgs":        t3_pkgs_list,
+				"cmds":        t3_build_cmds,
+				"config":      t3_check_config,
+				"result_file": t3_result_file,
 			}
 			return nil, res
 		}
@@ -1200,7 +1254,94 @@ func (this *MySQLSaver) CompleteJob(id int) error {
 			return err2
 		}
 
+		_, err3 := this.db.Exec(`update bayzr_JOBS as b1 
+		join 
+		(select tt1.id as idb, tt2.id as idj from bayzr_build_info as tt1 
+		join 
+		(select concat(t2.name, ".", t1.id) as nm, t1.id from bayzr_JOBS as t1 join bayzr_TASK as t2 
+		on t1.task_id = t2.id) as tt2 on tt1.name_of_build = tt2.nm and tt1.completed = 1) as b2 
+		on b1.id = b2.idj set b1.build_id = b2.idb`)
+		if err3 != nil {
+			return err3
+		}
+
 	}
 
 	return nil
+}
+
+func (this *MySQLSaver) GetOut(id int) (error, [][]string) {
+	result := [][]string{}
+	stmtOut, err := this.db.Prepare(`select t1.time_of_string, t1.line from bayzr_OUTPUT as t1 where t1.job_id = ? order by t1.time_of_string`)
+	if err != nil {
+		return err, [][]string{}
+	}
+	defer stmtOut.Close()
+
+	rows, err := stmtOut.Query()
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var (
+			t1_time string
+			t1_line string
+		)
+		if err := rows.Scan(&t1_time, &t1_line); err != nil {
+			return err, [][]string{}
+		}
+		t1_res := ""
+		if strings.Contains(t1_line, "+++:") {
+			t1_res = "success"
+		}
+		if strings.Contains(t1_line, "Error:") {
+			t1_res = "danger"
+		}
+		result = append(result, []string{t1_time, t1_line, t1_res})
+	}
+
+	return err, result
+}
+
+func (this *MySQLSaver) GetBuildId(name string) (error, int) {
+	stmtOut, err := this.db.Prepare(`select id from bayzr_build_info where name_of_build = ?`)
+	if err != nil {
+		return err, 0
+	}
+	defer stmtOut.Close()
+	var read_id int
+	err = stmtOut.QueryRow(name).Scan(&read_id)
+	if err != nil && err != sql.ErrNoRows {
+		return err, 0
+	}
+	if err == sql.ErrNoRows {
+		return nil, 0
+	} else {
+		return nil, read_id
+	}
+}
+
+func (this *MySQLSaver) GetResult(id int) (error, []string) {
+	result := []string{}
+	stmtOut, err := this.db.Prepare(`select file_string from bayzr_err_extend_file where build_id = ? order by id`)
+	if err != nil {
+		return err, []string{}
+	}
+	defer stmtOut.Close()
+
+	rows, err := stmtOut.Query()
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var (
+			t1_line string
+		)
+		if err := rows.Scan(&t1_line); err != nil {
+			return err, []string{}
+		}
+		result = append(result, t1_line)
+	}
+
+	return err, result
 }

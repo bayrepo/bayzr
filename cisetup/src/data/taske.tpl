@@ -182,6 +182,11 @@
 							<textarea class="form-control" rows="6" id="TaskConfig" name="TaskConfig">{{.TaskConfig}}</textarea>
 							{{if .TaskConfig_err}}<span class="help-block">{{.TaskConfig_err}}</span>{{end}}
 						</div>
+						<div class="form-group{{if .TaskResult_err}} has-error{{end}}">
+							<label for="TaskResult">Файл результата</label>
+							<input type="text" class="form-control input-sm" id="TaskResult" name="TaskResult" value="{{.TaskResult}}" />
+							{{if .TaskResult_err}}<span class="help-block">{{.TaskResult_err}}</span>{{end}}
+						</div>
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>
 				</div>

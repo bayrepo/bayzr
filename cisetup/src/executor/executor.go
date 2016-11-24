@@ -20,9 +20,9 @@ const (
 )
 
 type CiExec struct {
-	ci_id  int
-	config string
-	con    mysqlsaver.MySQLSaver
+	ci_id    int
+	config   string
+	con      mysqlsaver.MySQLSaver
 	build_id string
 }
 
@@ -76,7 +76,7 @@ func (this *CiExec) Exc(args []string) error {
 		}
 		env := os.Environ()
 		env = append(env, fmt.Sprintf("INJAIL=yes"))
-		env = append(env, fmt.Sprintf("BUILDID=%s", this.build_id)
+		env = append(env, fmt.Sprintf("BUILDID=%s", this.build_id))
 		env = append(env, fmt.Sprintf("PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"))
 		cmd.Env = env
 
@@ -337,6 +337,14 @@ func (this *CiExec) Run(id int, conf string) error {
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
+		}
+	}
+
+    this.MakeFakeOuptut("+++: Save result to " + taskInfo["result_file"])
+	if _, err := os.Stat(taskInfo["result_file"]); err == nil {
+		if err := this.con.InsertExtInfoFromResult(taskInfo["result_file"], taskInfo["name"]+"."+taskInfo["id"]); err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
 		}
 	}
 
