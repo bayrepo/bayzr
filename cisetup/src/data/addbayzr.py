@@ -29,7 +29,7 @@ if uid != os.getuid():
     print "Prepare chroot for non root user"
     os.chown(os.environ['TARGET'], uid, gid)
     real_root = os.open("/", os.O_RDONLY)
-    os.fchdir(real_root)
+
     os.chroot(os.environ['TARGET'])
 
     createUser(out_user, uid, gid)
@@ -37,6 +37,8 @@ if uid != os.getuid():
     with open("/etc/sudoers", "a") as myfile:
         myfile.write("%s ALL = NOPASSWD : /usr/bin/yum, /usr/bin/rpm\n" % out_user)
 
+    os.fchdir(real_root)
+    os.chroot(".")
     # Back to old root
     os.close(real_root)
 

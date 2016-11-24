@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"data"
+	"executor"
 	"flag"
 	"fmt"
 	"io"
@@ -17,7 +18,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"executor"
 )
 
 var db_passwd = "sonarPASS1234"
@@ -337,6 +337,10 @@ func JenkinsActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
+	err, _, _, _ = executeCommand(makeArgsFromString("firewall-cmd --zone=public --add-port=11000/tcp --permanent"))
+	if err != nil {
+		return err
+	}
 	err, _, _, _ = executeCommand(makeArgsFromString("firewall-cmd --zone=public --add-service=http --permanent"))
 	if err != nil {
 		return err
@@ -535,12 +539,27 @@ func SonarActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
+	
+	data2_2_tmp, err := data.Asset("../cisetup/src/data/sonar.properties")
+	if err != nil {
+		return err
+	}
+	data2_2 := replace_string(data2_2_tmp, "sonarPASSSWD", db_passwd)
+	err = ioutil.WriteFile("/usr/local/sonar-scanner/conf/sonar-scanner.properties", data2_2, 0644)
+	if err != nil {
+		return err
+	}
 
 	err, _, _, _ = executeCommand(makeArgsFromString("chkconfig --add sonar"))
 	if err != nil {
 		return err
 	}
 	this.SetParam("success", "sonar_service")
+	
+	err, _, _, _ = executeCommand(makeArgsFromString("/sbin/chkconfig sonar on"))
+	if err != nil {
+		return err
+	}
 
 	err = ioutil.WriteFile("/usr/local/sonar/conf/.pass", []byte(db_passwd), 0400)
 	if err != nil {
@@ -607,7 +626,7 @@ func BayZRActionInstall(parent interface{}) error {
 		return err
 	}
 	this.SetParam("success", "bayzr.repo")
-	err, _, _, _ = executeCommand(makeArgsFromString("yum install -y auto-buildrequires yumbootstrap"))
+	err, _, _, _ = executeCommand(makeArgsFromString("yum install -y auto-buildrequires yumbootstrap bayzr"))
 	if err != nil {
 		return err
 	}
@@ -652,7 +671,7 @@ func BayZRActionDelete(parent interface{}) error {
 	if err := deactivationCommonCmd(this, "sonarstart", "service sonar stop"); err != nil {
 		return err
 	}
-	if err := deactivationCommonCmd(this, "pkginstall", "yum erase auto-buildrequires yumbootstrap -y"); err != nil {
+	if err := deactivationCommonCmd(this, "pkginstall", "yum erase auto-buildrequires yumbootstrap bayzr -y"); err != nil {
 		return err
 	}
 	if err := deactivationCommonCmd(this, "bayzr.repo", "rm -rf /etc/yum.repos.d/home:bayrepo.repo"); err != nil {
@@ -737,6 +756,9 @@ func PluginActionInstall(parent interface{}) error {
 	if err := sa.SetSonarOption("sonar.python.pylint.reportPath", "pylint_report.txt"); err != nil {
 		return err
 	}
+	if err := sa.SetSonarOption("sonar.bayzr.pass", db_passwd); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -808,7 +830,7 @@ func SquidActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	data5, err := data.Asset("../cisetup/src/data/addbayzr.py")
 	if err != nil {
 		return err
@@ -860,18 +882,24 @@ func CiActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("setcap cap_sys_chroot+ep /usr/sbin/chroot"))
 	if err != nil {
 		return err
 	}
 	
+	err, _, _, _ = executeCommand(makeArgsFromString("setcap cap_sys_chroot+ep /usr/sbin/citool"))
+	if err != nil {
+		return err
+	}
+
+
 	err, _, _, _ = executeCommand(makeArgsFromString("systemctl start ciserver"))
 	if err != nil {
 		return err
 	}
 	this.SetParam("success", "ciserver_st")
-	
+
 	return nil
 }
 
@@ -894,11 +922,13 @@ func CiActionDelete(parent interface{}) error {
 var serverRun *bool
 var jobRunner uint64
 var taskRunner uint64
+var taskRun *bool
 
 func init() {
 	serverRun = flag.Bool("server-run", false, "Start program as server")
 	flag.Uint64Var(&jobRunner, "job-runner", 0, "Number of simultaneous tasks")
 	flag.Uint64Var(&taskRunner, "task", 0, "Number if task id to execute")
+	taskRun = flag.Bool("task-run", false, "Task flag(internal use)")
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("    ciutil [options] cmd ...\n")
@@ -911,9 +941,14 @@ func main() {
 
 	if *serverRun == true {
 		var rnr runner.CiRunner
+		var srv server.CiServer
+		if err := srv.PreRun("/etc/citool.ini"); err != nil {
+			fmt.Println(err)
+			os.Exit(255)
+		}
 		err := rnr.SelfRun("/etc/citool.ini")
+		defer rnr.KillSelfRun()
 		if err == nil {
-			var srv server.CiServer
 			if err := srv.Run(11000, "/etc/citool.ini"); err != nil {
 				fmt.Println(err)
 			}
@@ -935,6 +970,10 @@ func main() {
 		var ex executor.CiExec
 		ex.Run(int(taskRunner), "/etc/citool.ini")
 		os.Exit(0)
+	}
+	
+	if *taskRun == true {
+	    os.Exit(0)
 	}
 
 	actionsList := []*ActionSaver{}

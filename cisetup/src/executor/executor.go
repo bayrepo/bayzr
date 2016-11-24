@@ -7,10 +7,12 @@ import (
 	"github.com/vaughan0/go-ini"
 	"io"
 	"io/ioutil"
+	"log"
 	"mysqlsaver"
+	"os"
 	"os/exec"
 	"strings"
-	"log"
+	"syscall"
 )
 
 const (
@@ -21,6 +23,16 @@ type CiExec struct {
 	ci_id  int
 	config string
 	con    mysqlsaver.MySQLSaver
+	build_id string
+}
+
+func (this *CiExec) IsDirectory(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err == nil {
+		return fileInfo.IsDir(), err
+	} else {
+		return false, err
+	}
 }
 
 func (this *CiExec) readConfig(ini_file string) error {
@@ -62,6 +74,12 @@ func (this *CiExec) Exc(args []string) error {
 		} else {
 			cmd = exec.Command(start_cmd[0], start_cmd[1:]...)
 		}
+		env := os.Environ()
+		env = append(env, fmt.Sprintf("INJAIL=yes"))
+		env = append(env, fmt.Sprintf("BUILDID=%s", this.build_id)
+		env = append(env, fmt.Sprintf("PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"))
+		cmd.Env = env
+
 		var err error
 		this.MakeFakeOuptut("+++:" + clean_cmd)
 		var stdout io.ReadCloser
@@ -90,7 +108,7 @@ func (this *CiExec) Exc(args []string) error {
 		}
 
 		if err = cmd.Wait(); err != nil {
-			return fmt.Errorf("Analyzer error: wait command error %s\n", err)
+			return fmt.Errorf("wait command error %s\n", err)
 		}
 		return nil
 	}
@@ -98,6 +116,7 @@ func (this *CiExec) Exc(args []string) error {
 }
 
 func (this *CiExec) Run(id int, conf string) error {
+	this.ci_id = id
 	err := this.readConfig(conf)
 	if err != nil {
 		return err
@@ -109,13 +128,12 @@ func (this *CiExec) Run(id int, conf string) error {
 	defer this.con.Finalize()
 	defer this.con.CompleteJob(this.ci_id)
 
-	this.ci_id = id
-
 	taskInfo, err := this.GetTaskInfo()
 	if err != nil {
 		log.Printf("Task runner got error %s", err.Error())
 		return err
 	}
+	this.build_id = taskInfo["task_name"] + "." + taskInfo["id"]
 
 	err = this.Exc([]string{"/usr/bin/sudo", "/usr/sbin/yumbootstrap", "--verbose", "centos-7-mod", fmt.Sprintf("%scentos-7-mod.%d", chroot_path, id)})
 	if err != nil {
@@ -131,7 +149,7 @@ func (this *CiExec) Run(id int, conf string) error {
 
 	}()
 
-	err = this.Exc([]string{"/usr/sbin/chroot", fmt.Sprintf("%scentos-7-mod.%d", chroot_path, id), "/bin/env", "-i", "HOME=/home/checker", "TERM=\"$TERM\"", "PS1='\\u:\\w\\$ '", "PATH=/bin:/usr/bin:/sbin:/usr/sbin", "/bin/bash", "--login", "+h"})
+	/*err = this.Exc([]string{"/usr/sbin/chroot", fmt.Sprintf("%scentos-7-mod.%d", chroot_path, id), "/bin/env", "-i", "HOME=/home/checker", "TERM=\"$TERM\"", "PS1='\\u:\\w\\$ '", "PATH=/bin:/usr/bin:/sbin:/usr/sbin", "/bin/bash", "--login", "+h"})
 	if err != nil {
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
@@ -143,7 +161,43 @@ func (this *CiExec) Run(id int, conf string) error {
 			this.MakeFakeOuptut("Error: " + err.Error())
 		}
 
+	}()*/
+
+	d, err1 := syscall.Open("/", syscall.O_RDONLY, 0)
+	if err1 != nil {
+		this.MakeFakeOuptut("Error: " + err1.Error())
+		return err1
+	}
+	defer syscall.Close(d)
+
+	dir := fmt.Sprintf("%scentos-7-mod.%d", chroot_path, id)
+	err = syscall.Chroot(dir)
+	this.MakeFakeOuptut(fmt.Sprintf("+++: chroot %s", dir))
+	if err != nil {
+		this.MakeFakeOuptut("Error: " + err.Error())
+		return err
+	}
+
+	defer func() {
+		this.MakeFakeOuptut("+++: Back to real root")
+		err2 := syscall.Fchdir(d)
+		if err2 != nil {
+			this.MakeFakeOuptut("Error: " + err2.Error())
+			return
+		}
+		err2 = syscall.Chroot(".")
+		if err2 != nil {
+			this.MakeFakeOuptut("Error: " + err2.Error())
+			return
+		}
 	}()
+
+	err = os.Chdir("/home/checker")
+	this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to /home/checker"))
+	if err != nil {
+		this.MakeFakeOuptut("Error: " + err.Error())
+		return err
+	}
 
 	packages_list_str := strings.Trim(taskInfo["pkgs"], " \n,")
 	if len(packages_list_str) > 0 {
@@ -156,7 +210,7 @@ func (this *CiExec) Run(id int, conf string) error {
 			}
 		}
 		if len(packages_list) > 0 {
-			cmds := append([]string{"/usr/bin/yum", "-y", "--nogpgcheck"}, packages_list...)
+			cmds := append([]string{"/bin/sudo", "/usr/bin/yum", "-y", "--nogpgcheck", "install"}, packages_list...)
 			err = this.Exc(cmds)
 			if err != nil {
 				this.MakeFakeOuptut("Error: " + err.Error())
@@ -165,13 +219,15 @@ func (this *CiExec) Run(id int, conf string) error {
 		}
 	}
 
-	err = this.Exc([]string{"/usr/bin/mkdir", "chkdir"})
+	err = os.Mkdir("chkdir", 0755)
+	this.MakeFakeOuptut(fmt.Sprintf("+++: mkdir /home/checker/chkdir"))
 	if err != nil {
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
 
-	err = this.Exc([]string{"/usr/bin/cd", "chkdir"})
+	err = os.Chdir("/home/checker/chkdir")
+	this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to /home/checker"))
 	if err != nil {
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
@@ -193,10 +249,22 @@ func (this *CiExec) Run(id int, conf string) error {
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
-			err = this.Exc([]string{"/usr/bin/cd", "*"})
-			if err != nil {
-				this.MakeFakeOuptut("Error: " + err.Error())
-				return err
+			files, _ := ioutil.ReadDir("/home/checker/chkdir")
+			for _, f := range files {
+				f_name := "/home/checker/chkdir/" + f.Name()
+				is_d, d_err := this.IsDirectory(f_name)
+				if d_err != nil {
+					this.MakeFakeOuptut("Error: " + d_err.Error())
+					return err
+				}
+				if f_name != "." && f_name != ".." && is_d == true {
+					err = os.Chdir(f_name)
+					this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to %s", f_name))
+					if err != nil {
+						this.MakeFakeOuptut("Error: " + err.Error())
+						return err
+					}
+				}
 			}
 			err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(taskInfo["commit"], " \n")})
 			if err != nil {
@@ -274,7 +342,7 @@ func (this *CiExec) Run(id int, conf string) error {
 
 	sonar_tp := task_type
 	if sonar_tp == "1" {
-		err = this.Exc([]string{"/usr/local/sonar-scanner/bin/sonar-runner"})
+		err = this.Exc([]string{"/usr/local/sonar-scanner/bin/sonar-scanner"})
 		if err != nil {
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err

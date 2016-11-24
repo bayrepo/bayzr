@@ -127,6 +127,10 @@
 							    {{end}}
 							</select>
 						</div>
+						<div class="form-group">
+							<label for="JobDescr">Дополнительное описание</label>
+							<textarea class="form-control" rows="6" id="JobDescr" name="JobDescr">{{.JobDescr}}</textarea>
+						</div>
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>
 				</div>

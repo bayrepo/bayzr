@@ -115,6 +115,13 @@
 								<option value="2" {{if eq .TaskType "2"}}selected{{end}}>Commit Check</option>
 							</select>
 						</div>
+						<div class="form-group">
+							<label for="TaskBranch">Использовать коммит или ветку</label>
+							<select class="form-control selectpicker" id="TaskBranch" name="TaskBranch">
+								<option value="0" {{if eq .TaskBranch "0"}}selected{{end}}>Коммит</option>
+								<option value="1" {{if eq .TaskBranch "1"}}selected{{end}}>Ветку</option>
+							</select>
+						</div>
 						<div class="form-group{{if .TaskGit_err}} has-error{{end}}">
 							<label for="TaskGit">Команда клонирования</label>
 							<input type="text" class="form-control input-sm" id="TaskGit" name="TaskGit" value="{{.TaskGit}}"/>

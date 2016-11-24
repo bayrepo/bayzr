@@ -26,6 +26,7 @@ finalize = scripts/clean_yumbootstrap.py
 centos         = http://mirror.centos.org/centos/7/os/$basearch/
 centos-updates = http://mirror.centos.org/centos/7/updates/$basearch/
 home_repo      = http://download.opensuse.org/repositories/home:/bayrepo/CentOS_7/
+centos-extras  = http://mirror.centos.org/centos/7/extras/$basearch/
 
 
 [environment]

@@ -146,6 +146,17 @@ func (this *CiServer) usePerms(s sessions.Session, who_can []string, hdr *gin.H)
 	return nil
 }
 
+func (this *CiServer) PreRun(conf string) error {
+	var con mysqlsaver.MySQLSaver
+	dbErr := con.Init(this.config, nil)
+	if dbErr != nil {
+		return fmt.Errorf("DataBase saving error %s\n", dbErr)
+	}
+
+	defer con.Finalize()
+	return nil
+}
+
 func (this *CiServer) Run(port int, conf string) error {
 	err := this.readConfig(conf)
 	if err != nil {
@@ -215,18 +226,22 @@ func (this *CiServer) Run(port int, conf string) error {
 	router.POST("/jobs/add", this.newjob_post)
 	router.GET("/job/add", this.newjob)
 	router.POST("/job/add", this.newjob_post)
-	
+
 	router.GET("/jobdel/:jid", this.jobdel)
+	
+	router.GET("/output/:oid", this.out)
+	router.GET("/result/:oid", this.result)
 
 	pass := gin.Accounts{}
 	for _, item := range tockens {
 		pass[item[0]] = item[1]
 	}
+	if len(pass) > 0 {
+		authorized := router.Group("/api", gin.BasicAuth(pass))
 
-	authorized := router.Group("/api", gin.BasicAuth(pass))
+		authorized.GET("/ping", this.ping)
 
-	authorized.GET("/ping", this.ping)
-
+	}
 	router.Run(fmt.Sprintf(":%d", port))
 
 	return nil
@@ -677,6 +692,7 @@ type TaskForm struct {
 	TaskPeriod     string   `form:"TaskPeriod"`
 	TaskUsers      []string `form:"TaskUsers"`
 	TaskConfig     []string `form:"TaskConfig"`
+	TaskBranch     string   `form:"TaskBranch"`
 }
 
 func (this *CiServer) tasks(c *gin.Context) {
@@ -726,6 +742,7 @@ func (this *CiServer) tasks(c *gin.Context) {
 	hdr["TaskName"] = ""
 	hdr["TaskType"] = "2"
 	hdr["TaskGit"] = ""
+	hdr["TaskBranch"] = "0"
 	hdr["TaskPackGs"] = ""
 	hdr["TaskPackGsEarl"] = p_pkg_list
 	hdr["TaskCmds"] = ""
@@ -786,6 +803,7 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 	hdr["TaskName"] = ""
 	hdr["TaskType"] = "2"
 	hdr["TaskGit"] = ""
+	hdr["TaskBranch"] = "0"
 	hdr["TaskPackGs"] = ""
 	hdr["TaskPackGsEarl"] = p_pkg_list
 	hdr["TaskCmds"] = ""
@@ -862,11 +880,13 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 		} else {
 			hdr["TaskConfig"] = strings.Join(form.TaskConfig, "\n")
 		}
+		hdr["TaskBranch"] = form.TaskBranch
 
 		if fnd_err == false {
+			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"])
 			if err, _ := con.SaveTask(sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
-				form.TaskUsers, form.TaskConfig); err != nil {
+				form.TaskUsers, form.TaskConfig, i_taskBranch); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {
@@ -995,6 +1015,7 @@ func (this *CiServer) tasks_edit(c *gin.Context) {
 
 	hdr["TaskId"] = lst[0]
 	hdr["TaskName"] = lst[1]
+	hdr["TaskBranch"] = lst[12]
 	hdr["TaskType"] = lst[2]
 	hdr["TaskGit"] = lst[3]
 	hdr["TaskPackGs"] = ""
@@ -1092,6 +1113,7 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 
 	hdr["TaskId"] = lst[0]
 	hdr["TaskName"] = lst[1]
+	hdr["TaskBranch"] = lst[12]
 	hdr["TaskType"] = lst[2]
 	hdr["TaskGit"] = lst[3]
 	hdr["TaskPackGs"] = ""
@@ -1172,10 +1194,13 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 			hdr["TaskConfig"] = strings.Join(form.TaskConfig, "\n")
 		}
 
+		hdr["TaskBranch"] = form.TaskBranch
+
 		if fnd_err == false {
+			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"])
 			if err := con.UpdateTask(tid_number, sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
-				form.TaskUsers, form.TaskConfig); err != nil {
+				form.TaskUsers, form.TaskConfig, i_taskBranch); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {
@@ -1294,6 +1319,7 @@ func (this *CiServer) newjob(c *gin.Context) {
 	hdr["JobPrior"] = "2"
 	hdr["JobCommit"] = ""
 	hdr["JobTask"] = tasks
+	hdr["JobDescr"] = ""
 
 	hdr["User"] = session.Get("login").(string)
 
@@ -1305,6 +1331,7 @@ type JobForm struct {
 	JobPrior  string `form:"JobPrior"`
 	JobCommit string `form:"JobCommit"`
 	JobTask   int    `form:"JobTask"`
+	JobDescr  string `form:"JobDescr"`
 }
 
 func (this *CiServer) newjob_post(c *gin.Context) {
@@ -1342,6 +1369,7 @@ func (this *CiServer) newjob_post(c *gin.Context) {
 	hdr["JobPrior"] = "2"
 	hdr["JobCommit"] = ""
 	hdr["JobTask"] = tasks
+	hdr["JobDescr"] = ""
 
 	var form JobForm
 	if c.Bind(&form) == nil {
@@ -1370,8 +1398,10 @@ func (this *CiServer) newjob_post(c *gin.Context) {
 
 		hdr["JobPrior"] = form.JobPrior
 
+		hdr["JobDescr"] = form.JobDescr
+
 		if fnd_err == false {
-			if err, _ := con.InsertJob(sess_id.(int), form.JobName, form.JobCommit, form.JobPrior, form.JobTask); err != nil {
+			if err, _ := con.InsertJob(sess_id.(int), form.JobName, form.JobCommit, form.JobPrior, form.JobTask, form.JobDescr); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {

@@ -12,6 +12,7 @@ public class BayzrProperties {
   public static final String DBUS_KEY = "sonar.bayzr.user";
   public static final String DBPS_KEY = "sonar.bayzr.pass";
   public static final String SUFFIXES_KEY = "sonar.bayzr.files";
+  public static final String LASTID_KEY = "sonar.bayzr.lastid";
   public static final String CATEGORY = "bayzr";
 
   private BayzrProperties() {
@@ -38,6 +39,12 @@ public class BayzrProperties {
         .defaultValue("bayzr")
         .category(CATEGORY)
         .build(),
+      PropertyDefinition.builder(LASTID_KEY)
+        .name("Last build ID check")
+        .description("Add build by ID more then last id")
+        .defaultValue("no")
+        .category(CATEGORY)
+        .build()
       PropertyDefinition.builder(DBPARAM_KEY)
         .name("JDBC URL")
         .description("Db connevtion parameters (URL)")

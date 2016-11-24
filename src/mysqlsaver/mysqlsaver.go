@@ -19,7 +19,7 @@ type MySQLSaver struct {
 }
 
 func randToken() string {
-	b := make([]byte, 30)
+	b := make([]byte, 15)
 	rand.Read(b)
 	return fmt.Sprintf("%x", b)
 }
@@ -71,7 +71,7 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 			`CREATE TABLE IF NOT EXISTS bayzr_last_check(
 		        id INTEGER  NOT NULL AUTO_INCREMENT, 
 		        checker VARCHAR(255), 
-		        last_build_id, 
+		        last_build_id INTEGER, 
 		        PRIMARY KEY (id),
 		        UNIQUE KEY(checker))`); err != nil {
 			return err
@@ -224,14 +224,15 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		        name VARCHAR(255) DEFAULT "",
 		        task_type CHAR(1) DEFAULT "",
 		        source VARCHAR(255) DEFAULT "",
-		        pkgs_list TEXT DEFAULT "",
-		        build_cmds TEXT DEFAULT "",
+		        pkgs_list TEXT,
+		        build_cmds TEXT,
 		        period CHAR(1) DEFAULT "",
 		        start_time VARCHAR(20) DEFAULT "",
 		        user_id INTEGER,
-		        check_config TEXT DEFAULT "",
-		        users_list TEXT DEFAULT "",
+		        check_config TEXT,
+		        users_list TEXT,
 		        auth_tocken VARCHAR(30) DEFAULT "",
+		        use_branch INT DEFAULT 0,
 		        PRIMARY KEY (id),
                 INDEX TASK_name_I (name(20)),
                 INDEX TASK_task_type_I (task_type),
@@ -257,11 +258,13 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		        build_id INTEGER,
 		        priority CHAR DEFAULT "",
 		        task_id INTEGER,
+		        descr TEXT,
 		        PRIMARY KEY (id),
                 INDEX JOBS_user_id_I (user_id),
                 INDEX JOBS_priority_I (priority),
                 INDEX JOBS_create_date_start_I (create_date_start),
                 INDEX JOBS_task_id_id_I (task_id),
+                INDEX JOBS_descr_I (descr(50)),
                 INDEX JOBS_build_date_start_I (build_date_start))`); err != nil {
 			return err
 		}
@@ -822,7 +825,7 @@ func (this *MySQLSaver) GetPackages() (error, []string) {
 }
 
 func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git string, new_pkgs []string,
-	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string) (error, int) {
+	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int) (error, int) {
 	var id int64 = 0
 	if this.ok == 1 {
 		task_type := Ttype
@@ -855,10 +858,10 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 		per_type := Ptype
 		res, err2 := this.db.Exec(`INSERT INTO bayzr_TASK(name, task_type, source, pkgs_list,
 										build_cmds, period, start_time, user_id, check_config,
-										users_list, auth_tocken) 
-                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, task_type, git, pkgs_list,
+										users_list, auth_tocken, use_branch) 
+                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, task_type, git, pkgs_list,
 			strings.Join(cmds, "\n"), per_type, period, owner_id,
-			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken())
+			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken(), use_branch)
 		if err2 != nil {
 			return err2, 0
 		}
@@ -876,7 +879,7 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 }
 
 func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype string, git string, new_pkgs []string,
-	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string) error {
+	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int) error {
 	if this.ok == 1 {
 		task_type := Ttype[0]
 		pkgs_list := ""
@@ -908,9 +911,9 @@ func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype stri
 		per_type := Ptype[0]
 		_, err2 := this.db.Exec(`UPDATE bayzr_TASK SET name = ?, task_type = ?, source = ?, pkgs_list = ?,
 										build_cmds = ?, period = ?, start_time = ?, check_config = ?,
-										users_list = ? WHERE id = ?`, name, task_type, git, pkgs_list,
+										users_list = ?, use_branch = ? WHERE id = ?`, name, task_type, git, pkgs_list,
 			strings.Join(cmds, "\n"), per_type, period,
-			strings.Join(cfg, "\n"), strings.Join(users, ","), id)
+			strings.Join(cfg, "\n"), strings.Join(users, ","), id, use_branch)
 		if err2 != nil {
 			return err2
 		}
@@ -966,7 +969,7 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 
 	stmtOut, err := this.db.Prepare(`select t1.id, t1.name, t1.task_type, t1.source, t1.pkgs_list,
 	t1.build_cmds, t1.period, t1.start_time, t2.name, t1.check_config, t1.users_list,
-	t1.auth_tocken from bayzr_TASK as t1 
+	t1.auth_tocken, t1.use_branch from bayzr_TASK as t1 
 	join bayzr_USER as t2 on t1.user_id = t2.id where t1.id = ?`)
 	if err != nil {
 		return err, []string{}
@@ -986,11 +989,12 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 		t1_check_config string
 		t1_users_list   string
 		t1_auth_tocken  string
+		t1_use_branch   string
 	)
 
 	err = stmtOut.QueryRow(id).Scan(&t1_id, &t1_name, &t1_task_type, &t1_source, &t1_pkgs_list,
 		&t1_build_cmds, &t1_period, &t1_start_time, &t2_name, &t1_check_config, &t1_users_list,
-		&t1_auth_tocken)
+		&t1_auth_tocken, &t1_use_branch)
 	if err != nil && err != sql.ErrNoRows {
 		return err, []string{}
 	}
@@ -999,7 +1003,7 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 	} else {
 		return nil, []string{fmt.Sprintf("%d", t1_id), t1_name, t1_task_type, t1_source, t1_pkgs_list,
 			t1_build_cmds, t1_period, t1_start_time, t2_name, t1_check_config, t1_users_list,
-			t1_auth_tocken}
+			t1_auth_tocken, t1_use_branch}
 	}
 
 }
@@ -1017,12 +1021,12 @@ func (this *MySQLSaver) DelTask(id int) error {
 	return nil
 }
 
-func (this *MySQLSaver) InsertJob(owner_id int, name string, commit string, priority string, task_id int) (error, int) {
+func (this *MySQLSaver) InsertJob(owner_id int, name string, commit string, priority string, task_id int, descr string) (error, int) {
 	var id int64 = 0
 	if this.ok == 1 {
 
 		res, err2 := this.db.Exec(`INSERT INTO bayzr_JOBS(user_id, job_name, commit, priority, task_id) 
-                                        VALUES(?,?,?,?,?)`, owner_id, name, commit, priority, task_id)
+                                        VALUES(?,?,?,?,?,?)`, owner_id, name, commit, priority, task_id, descr)
 		if err2 != nil {
 			return err2, 0
 		}
@@ -1041,7 +1045,7 @@ func (this *MySQLSaver) InsertJob(owner_id int, name string, commit string, prio
 func (this *MySQLSaver) GetJobs() (error, [][]string) {
 	result := [][]string{}
 	stmtOut, err := this.db.Prepare(`select t1.id, t1.job_name, t1.commit, ifnull(t1.build_date_start,""), ifnull(t1.build_date_end,""),
-	ifnull(t1.build_id,0), t1.priority, t2.name, t3.name from bayzr_JOBS as t1 
+	ifnull(t1.build_id,0), t1.priority, t2.name, t3.name, t1.descr from bayzr_JOBS as t1 
 	join bayzr_USER as t2 on t1.user_id = t2.id join bayzr_TASK as t3 on t3.id = t1.task_id order by t1.id desc`)
 	if err != nil {
 		return err, result
@@ -1062,13 +1066,14 @@ func (this *MySQLSaver) GetJobs() (error, [][]string) {
 			t1_priority         string
 			t2_user_name        string
 			t3_task_name        string
+			t1_descr            string
 		)
 		if err := rows.Scan(&t1_id, &t1_job_name, &t1_commit, &t1_build_date_start, &t1_build_date_end,
-			&t1_build_id, &t1_priority, &t2_user_name, &t3_task_name); err != nil {
+			&t1_build_id, &t1_priority, &t2_user_name, &t3_task_name, &t1_descr); err != nil {
 			return err, [][]string{}
 		}
 		result = append(result, []string{fmt.Sprintf("%d", t1_id), t1_job_name, t1_commit, t1_build_date_start, t1_build_date_end,
-			t1_build_id, t1_priority, t2_user_name, t3_task_name})
+			t1_build_id, t1_priority, t2_user_name, t3_task_name, t1_descr})
 	}
 	return err, result
 }
@@ -1158,7 +1163,7 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 				"login":     t2_login,
 				"name":      t2_name,
 				"job_name":  t1_job_name,
-				"commit":    t3_name,
+				"commit":    t1_commit,
 				"task_name": t3_name,
 				"task_type": t3_task_type,
 				"source":    t3_source,

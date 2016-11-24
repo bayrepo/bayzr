@@ -21,6 +21,7 @@ type CiRunner struct {
 	ci_pids         []int
 	nmb             string
 	ci_time         int
+	cmd             *exec.Cmd
 }
 
 func (this *CiRunner) readConfig(ini_file string) error {
@@ -91,7 +92,7 @@ func (this *CiRunner) MakeChild(id int) error {
 	fstdout := os.Stdout
 	fstderr := os.Stderr
 
-	argv := []string{binary, fmt.Sprintf("-task=%d", id)}
+	argv := []string{binary, fmt.Sprintf("-task=%d", id), "-task-run"}
 	procAttr := syscall.ProcAttr{
 		Dir:   ".",
 		Files: []uintptr{fstdin.Fd(), fstdout.Fd(), fstderr.Fd()},
@@ -139,6 +140,28 @@ func (this *CiRunner) RemovePID(pid int) {
 	this.ci_pids = result
 }
 
+func (this *CiRunner) _scanStartedChilds(found_threads bool) (error, bool) {
+	pid_to_remove := []int{}
+	for _, pid := range this.ci_pids {
+
+		var wstat syscall.WaitStatus
+		pid_ret, err := syscall.Wait4(pid, &wstat, syscall.WNOHANG, nil)
+		if err != nil {
+			return err, found_threads
+		}
+		if pid_ret == pid && wstat.Exited() {
+			this.ci_busy_threads -= 1
+			pid_to_remove = append(pid_to_remove, pid)
+			found_threads = true
+		}
+
+	}
+	for _, pid := range pid_to_remove {
+		this.RemovePID(pid)
+	}
+	return nil, found_threads
+}
+
 func (this *CiRunner) Run(conf string) error {
 	this.ci_pids = []int{}
 	this.ci_busy_threads = 0
@@ -173,32 +196,23 @@ func (this *CiRunner) Run(conf string) error {
 					os.Exit(1)
 				}
 			}
-			if err = this.MakeChild(id); err != nil {
-				if err2 := this.MakeFakeOuptut(id, fmt.Sprintf("%s", err.Error())); err2 != nil {
-					log.Printf("Got error: %s", err2.Error())
-					os.Exit(1)
+			if id > 0 {
+				if err = this.MakeChild(id); err != nil {
+					if err2 := this.MakeFakeOuptut(id, fmt.Sprintf("%s", err.Error())); err2 != nil {
+						log.Printf("Got error: %s", err2.Error())
+						os.Exit(1)
+					}
 				}
-			}
-			this.ci_busy_threads += 1
-			found_threads = true
-		} else {
-			pid_to_remove := []int{}
-			for _, pid := range this.ci_pids {
-
-				var wstat syscall.WaitStatus
-				pid_ret, err := syscall.Wait4(pid, &wstat, syscall.WNOHANG, nil)
-				if err != nil {
+				this.ci_busy_threads += 1
+				found_threads = true
+			} else {
+				if err, found_threads = this._scanStartedChilds(found_threads); err != nil {
 					return err
 				}
-				if pid_ret == pid && wstat.Exited() {
-					this.ci_busy_threads -= 1
-					pid_to_remove = append(pid_to_remove, pid)
-					found_threads = true
-				}
-
 			}
-			for _, pid := range pid_to_remove {
-				this.RemovePID(pid)
+		} else {
+			if err, found_threads = this._scanStartedChilds(found_threads); err != nil {
+				return err
 			}
 		}
 		if found_threads == false {
@@ -214,15 +228,16 @@ func (this *CiRunner) SelfRun(conf string) error {
 	if err != nil {
 		return err
 	}
+	this.cmd = exec.Command(os.Args[0], "-job-runner", this.nmb)
 	go func() {
 		for {
 			log.Printf("Start job runner")
-			cmd := exec.Command(os.Args[0], "-job-runner", this.nmb)
-			err := cmd.Start()
+
+			err := this.cmd.Start()
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = cmd.Wait()
+			err = this.cmd.Wait()
 			log.Printf("Command finished with error: %v", err)
 			if err != nil {
 				os.Exit(2)
@@ -230,4 +245,10 @@ func (this *CiRunner) SelfRun(conf string) error {
 		}
 	}()
 	return nil
+}
+
+func (this *CiRunner) KillSelfRun() {
+	if this.cmd.Process != nil {
+		this.cmd.Process.Kill()
+	}
 }

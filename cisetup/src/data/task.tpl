@@ -101,7 +101,7 @@
 				<div class="panel-body">
 					<form role="form" autocomplete="off" action="/tasks/add" method="post">
 						<div class="form-group{{if .TaskName_err}} has-error{{end}}">
-							<label for="TaskName">Название</label>
+							<label for="TaskName">Название(name[:key[:version]])</label>
 							<input type="text" class="form-control input-sm" id="TaskName" name="TaskName" value="{{.TaskName}}" />
 							{{if .TaskName_err}}<span class="help-block">{{.TaskName_err}}</span>{{end}}
 						</div>
@@ -110,6 +110,13 @@
 							<select class="form-control selectpicker" id="TaskType" name="TaskType">
 								<option value="1" {{if eq .TaskType "1"}}selected{{end}}>SonarQube</option>
 								<option value="2" {{if eq .TaskType "2"}}selected{{end}}>Commit Check</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="TaskBranch">Использовать коммит или ветку</label>
+							<select class="form-control selectpicker" id="TaskBranch" name="TaskBranch">
+								<option value="0" {{if eq .TaskBranch "0"}}selected{{end}}>Коммит</option>
+								<option value="1" {{if eq .TaskBranch "1"}}selected{{end}}>Ветку</option>
 							</select>
 						</div>
 						<div class="form-group{{if .TaskGit_err}} has-error{{end}}">
