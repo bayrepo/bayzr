@@ -252,7 +252,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
            rs = stmt.executeQuery("select bayzr_err, severity, file, pos, descript from bayzr_err_list where build_number = (select max(id) from bayzr_build_info where completed = 1 and id >= " + str_build + ") order by file, pos");
         } else {
         	String build_nm = System.getenv("BUILDID");
-        	if build_nm != null {
+        	if (build_nm != null) {
         		rs = stmt.executeQuery("select id from bayzr_build_info where name_of_build = '" + build_nm + "'");
                 int last_build_id = 0;
 

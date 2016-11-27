@@ -69,5 +69,8 @@ cp ../sonarqube/src/main/resources/bayzr/*.xml /etc/bzr.d/
 
 /usr/bin/go build -o ../bin/go-bindata ../src/github.com/jteeuwen/go-bindata/go-bindata
 
-../bin/go-bindata -o ../cisetup/src/data/data.go -pkg data ../cisetup/src/data ../cisetup/src/data/css ../cisetup/src/data/js ../cisetup/src/data/fonts ../cisetup/src/data/js/i18n
+cd ..
+bin/go-bindata -o cisetup/src/data/data.go -pkg data cisetup/src/data cisetup/src/data/css cisetup/src/data/js cisetup/src/data/fonts cisetup/src/data/js/i18n
+cd -
+
 /usr/bin/go build -o ../bin/citool ../cisetup/src/main/main.go

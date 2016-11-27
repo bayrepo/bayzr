@@ -66,57 +66,57 @@ func (this *CiServer) readConfig(ini_file string) error {
 
 func (this *CiServer) LoadTemplates() (multitemplate.Render, error) {
 	templates := multitemplate.New()
-	html_resource, err := data.Asset("../cisetup/src/data/login.tpl")
+	html_resource, err := data.Asset("cisetup/src/data/login.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("login", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/profile.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/profile.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("profile", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/register.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/register.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("register", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/users.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/users.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("users", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/user.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/user.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("user", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/task.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/task.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("task", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/tasks.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/tasks.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("tasks", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/taske.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/taske.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("taske", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/jobs.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/jobs.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("jobs", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/job.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/job.tpl")
 	if err != nil {
 		return templates, err
 	}
 	templates.AddFromString("job", string(html_resource))
-	html_resource, err = data.Asset("../cisetup/src/data/out.tpl")
+	html_resource, err = data.Asset("cisetup/src/data/out.tpl")
 	if err != nil {
 		return templates, err
 	}
@@ -189,11 +189,11 @@ func (this *CiServer) Run(port int, conf string) error {
 
 	this.ses = sessions.NewCookieStore([]byte("bayzr-server"))
 	router.Use(sessions.Sessions("bayzr-session", this.ses))
-	router.Use(static.Serve("/css", BinaryFileSystem("../cisetup/src/data/css/")))
-	router.Use(static.Serve("/js", BinaryFileSystem("../cisetup/src/data/js/")))
-	router.Use(static.Serve("/js/i18n", BinaryFileSystem("../cisetup/src/data/js/i18n")))
-	router.Use(static.Serve("/i18n", BinaryFileSystem("../cisetup/src/data/js/i18n")))
-	router.Use(static.Serve("/fonts", BinaryFileSystem("../cisetup/src/data/fonts/")))
+	router.Use(static.Serve("/css", BinaryFileSystem("cisetup/src/data/css/")))
+	router.Use(static.Serve("/js", BinaryFileSystem("cisetup/src/data/js/")))
+	router.Use(static.Serve("/js/i18n", BinaryFileSystem("cisetup/src/data/js/i18n")))
+	router.Use(static.Serve("/i18n", BinaryFileSystem("cisetup/src/data/js/i18n")))
+	router.Use(static.Serve("/fonts", BinaryFileSystem("cisetup/src/data/fonts/")))
 
 	router.GET("/", this.root)
 	router.POST("/", this.root)

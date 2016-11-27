@@ -17,6 +17,8 @@ mkdir -p "$PRP_DIR/xml"
 cp -R ../cfg "$PRP_DIR"
 cp -R ../src "$PRP_DIR"
 cp -R ../sonarqube "$PRP_DIR"
+cp -R ../go-bindata "$PRP_DIR"
+cp -R ../cisetup "$PRP_DIR"
 cp ../sonarqube/src/main/resources/bayzr/*.xml "$PRP_DIR/xml"
 mkdir -p "$PRP_DIR/rpm"
 

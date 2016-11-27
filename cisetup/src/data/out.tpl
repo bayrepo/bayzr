@@ -63,13 +63,13 @@
 		
 				<table class="table table-bordered">
 					<tr>
-						<th>Дата события</th>
-						<th>Информация</th>
+						<th style="font-size: 10px;">Дата события</th>
+						<th style="font-size: 10px;">Информация</th>
 					</tr>
 {{range .out}}
 					<tr class="{{index . 2}}">
-						<td>{{index . 0}}</td>
-						<td>{{index . 1}}/td>
+						<td style="font-size: 10px; padding: 0; margin: 0;" nowrap>{{index . 0}}</td>
+						<td style="font-size: 10px; padding: 0; margin: 0;">{{index . 1}}</td>
 					</tr>
 {{end}}
 				</table>

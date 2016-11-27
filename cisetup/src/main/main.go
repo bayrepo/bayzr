@@ -521,7 +521,7 @@ func SonarActionInstall(parent interface{}) error {
 		return err
 	}
 
-	data1, err := data.Asset("../cisetup/src/data/sonar")
+	data1, err := data.Asset("cisetup/src/data/sonar")
 	if err != nil {
 		return err
 	}
@@ -530,7 +530,7 @@ func SonarActionInstall(parent interface{}) error {
 		return err
 	}
 
-	data2_tmp, err := data.Asset("../cisetup/src/data/sonar.properties")
+	data2_tmp, err := data.Asset("cisetup/src/data/sonar.properties")
 	if err != nil {
 		return err
 	}
@@ -539,8 +539,8 @@ func SonarActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	
-	data2_2_tmp, err := data.Asset("../cisetup/src/data/sonar.properties")
+
+	data2_2_tmp, err := data.Asset("cisetup/src/data/sonar.properties")
 	if err != nil {
 		return err
 	}
@@ -555,7 +555,7 @@ func SonarActionInstall(parent interface{}) error {
 		return err
 	}
 	this.SetParam("success", "sonar_service")
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("/sbin/chkconfig sonar on"))
 	if err != nil {
 		return err
@@ -790,7 +790,7 @@ func SquidActionInstall(parent interface{}) error {
 	}
 	this.SetParam("success", "squid_en")
 
-	data0, err := data.Asset("../cisetup/src/data/squid.conf")
+	data0, err := data.Asset("cisetup/src/data/squid.conf")
 	if err != nil {
 		return err
 	}
@@ -804,7 +804,7 @@ func SquidActionInstall(parent interface{}) error {
 	}
 	this.SetParam("success", "squid_st")
 
-	data2, err := data.Asset("../cisetup/src/data/centos-7-mod.suite")
+	data2, err := data.Asset("cisetup/src/data/centos-7-mod.suite")
 	if err != nil {
 		return err
 	}
@@ -813,7 +813,7 @@ func SquidActionInstall(parent interface{}) error {
 		return err
 	}
 
-	data3, err := data.Asset("../cisetup/src/data/centos-7-mod.list")
+	data3, err := data.Asset("cisetup/src/data/centos-7-mod.list")
 	if err != nil {
 		return err
 	}
@@ -822,7 +822,7 @@ func SquidActionInstall(parent interface{}) error {
 		return err
 	}
 
-	data4, err := data.Asset("../cisetup/src/data/repomd.xml.key")
+	data4, err := data.Asset("cisetup/src/data/repomd.xml.key")
 	if err != nil {
 		return err
 	}
@@ -831,7 +831,7 @@ func SquidActionInstall(parent interface{}) error {
 		return err
 	}
 
-	data5, err := data.Asset("../cisetup/src/data/addbayzr.py")
+	data5, err := data.Asset("cisetup/src/data/addbayzr.py")
 	if err != nil {
 		return err
 	}
@@ -862,19 +862,14 @@ func SquidActionDelete(parent interface{}) error {
 /* BEGIN: ciserver install */
 func CiActionInstall(parent interface{}) error {
 	this := parent.(*ActionSaver)
-	this.SetParam("ok", "ciserver")
-	err, _, _, _ := executeCommand(makeArgsFromString("yum install -y ciserver"))
-	if err != nil {
-		return err
-	}
 	this.SetParam("success", "ciserver")
-	err, _, _, _ = executeCommand(makeArgsFromString("systemctl enable ciserver"))
+	err, _, _, _ = executeCommand(makeArgsFromString("systemctl enable citool"))
 	if err != nil {
 		return err
 	}
 	this.SetParam("success", "ciserver_en")
 
-	data0, err := data.Asset("../cisetup/src/data/sudoers")
+	data0, err := data.Asset("cisetup/src/data/sudoers")
 	if err != nil {
 		return err
 	}
@@ -887,14 +882,23 @@ func CiActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("setcap cap_sys_chroot+ep /usr/sbin/citool"))
 	if err != nil {
 		return err
 	}
+	
+	data2_2_tmp, err := data.Asset("cisetup/src/data/citool.ini")
+	if err != nil {
+		return err
+	}
+	data2_2 := replace_string(data2_2_tmp, "sonarPASSSWD", db_passwd)
+	err = ioutil.WriteFile("/etc/citool.ini", data2_2, 0644)
+	if err != nil {
+		return err
+	}
 
-
-	err, _, _, _ = executeCommand(makeArgsFromString("systemctl start ciserver"))
+	err, _, _, _ = executeCommand(makeArgsFromString("systemctl start citool"))
 	if err != nil {
 		return err
 	}
@@ -905,13 +909,10 @@ func CiActionInstall(parent interface{}) error {
 
 func CiActionDelete(parent interface{}) error {
 	this := parent.(*ActionSaver)
-	if err := deactivationCommonCmd(this, "ciserver_st", "systemctl stop ciserver"); err != nil {
+	if err := deactivationCommonCmd(this, "ciserver_st", "systemctl stop citool"); err != nil {
 		return err
 	}
-	if err := deactivationCommonCmd(this, "ciserver_en", "systemctl disable ciserver"); err != nil {
-		return err
-	}
-	if err := deactivationCommonCmd(this, "ciserver", "yum erase ciserver -y"); err != nil {
+	if err := deactivationCommonCmd(this, "ciserver_en", "systemctl disable citool"); err != nil {
 		return err
 	}
 	return nil
@@ -923,8 +924,10 @@ var serverRun *bool
 var jobRunner uint64
 var taskRunner uint64
 var taskRun *bool
+var setupRun *bool
 
 func init() {
+	setupRun = flag.Bool("setup-run", false, "Start setup CI environment")
 	serverRun = flag.Bool("server-run", false, "Start program as server")
 	flag.Uint64Var(&jobRunner, "job-runner", 0, "Number of simultaneous tasks")
 	flag.Uint64Var(&taskRunner, "task", 0, "Number if task id to execute")
@@ -971,36 +974,41 @@ func main() {
 		ex.Run(int(taskRunner), "/etc/citool.ini")
 		os.Exit(0)
 	}
-	
+
 	if *taskRun == true {
-	    os.Exit(0)
+		os.Exit(0)
 	}
 
-	actionsList := []*ActionSaver{}
-	result := welcomeMessage()
-	switch result {
-	case 1:
-		actionsList = append(actionsList, MakeActionSaver("Initial packages list installation", CheckFirstPackageSet, RemoveFirstpackageSet))
-		actionsList = append(actionsList, MakeActionSaver("Install Java 8 and Jenkins", JenkinsActionInstall, JenkinsActionDelete))
-		actionsList = append(actionsList, MakeActionSaver("Install SonarQube", SonarActionInstall, SonarActionDelete))
-		actionsList = append(actionsList, MakeActionSaver("Install BayZR", BayZRActionInstall, BayZRActionDelete))
-		actionsList = append(actionsList, MakeActionSaver("Install SonarQube plugins", PluginActionInstall, PluginActionDelete))
-		actionsList = append(actionsList, MakeActionSaver("Install Squid and YumBootsTrap plugins", SquidActionInstall, SquidActionDelete))
-		actionsList = append(actionsList, MakeActionSaver("Install Ci Server", CiActionInstall, CiActionDelete))
-		break
-	case 2:
-		break
-	case 3:
-		break
-	}
-	for _, action := range actionsList {
-		if err := action.Activate(); err != nil {
-			fmt.Println("==================================================It is looks like error happened==========================================================")
-			for i := len(actionsList) - 1; i >= 0; i-- {
-				actionsList[i].Deactivate()
-			}
+	if *setupRun == true {
+
+		actionsList := []*ActionSaver{}
+		result := welcomeMessage()
+		switch result {
+		case 1:
+			actionsList = append(actionsList, MakeActionSaver("Initial packages list installation", CheckFirstPackageSet, RemoveFirstpackageSet))
+			actionsList = append(actionsList, MakeActionSaver("Install Java 8 and Jenkins", JenkinsActionInstall, JenkinsActionDelete))
+			actionsList = append(actionsList, MakeActionSaver("Install SonarQube", SonarActionInstall, SonarActionDelete))
+			actionsList = append(actionsList, MakeActionSaver("Install BayZR", BayZRActionInstall, BayZRActionDelete))
+			actionsList = append(actionsList, MakeActionSaver("Install SonarQube plugins", PluginActionInstall, PluginActionDelete))
+			actionsList = append(actionsList, MakeActionSaver("Install Squid and YumBootsTrap plugins", SquidActionInstall, SquidActionDelete))
+			actionsList = append(actionsList, MakeActionSaver("Install Ci Server", CiActionInstall, CiActionDelete))
+			break
+		case 2:
+			break
+		case 3:
 			break
 		}
+		for _, action := range actionsList {
+			if err := action.Activate(); err != nil {
+				fmt.Println("==================================================It is looks like error happened==========================================================")
+				for i := len(actionsList) - 1; i >= 0; i-- {
+					actionsList[i].Deactivate()
+				}
+				break
+			}
+		}
+		os.Exit(0)
 	}
-	os.Exit(0)
+	fmt.Println("No action was selected")
+	os.Exit(1)
 }

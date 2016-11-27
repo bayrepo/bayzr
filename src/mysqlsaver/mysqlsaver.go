@@ -909,8 +909,8 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 		res, err2 := this.db.Exec(`INSERT INTO bayzr_TASK(name, task_type, source, pkgs_list,
 										build_cmds, period, start_time, user_id, check_config,
 										users_list, auth_tocken, use_branch, result_file) 
-                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, task_type, git, pkgs_list,
-			strings.Join(cmds, "\n"), per_type, period, owner_id,
+                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, string(task_type), git, pkgs_list,
+			strings.Join(cmds, "\n"), string(per_type), string(period), owner_id,
 			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken(), use_branch, repname)
 		if err2 != nil {
 			return err2, 0
@@ -961,8 +961,8 @@ func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype stri
 		per_type := Ptype[0]
 		_, err2 := this.db.Exec(`UPDATE bayzr_TASK SET name = ?, task_type = ?, source = ?, pkgs_list = ?,
 										build_cmds = ?, period = ?, start_time = ?, check_config = ?,
-										users_list = ?, use_branch = ?, result_file = ? WHERE id = ?`, name, task_type, git, pkgs_list,
-			strings.Join(cmds, "\n"), per_type, period,
+										users_list = ?, use_branch = ?, result_file = ? WHERE id = ?`, name, string(task_type), git, pkgs_list,
+			strings.Join(cmds, "\n"), string(per_type), string(period),
 			strings.Join(cfg, "\n"), strings.Join(users, ","), use_branch, repname, id)
 		if err2 != nil {
 			return err2
@@ -1076,7 +1076,7 @@ func (this *MySQLSaver) InsertJob(owner_id int, name string, commit string, prio
 	var id int64 = 0
 	if this.ok == 1 {
 
-		res, err2 := this.db.Exec(`INSERT INTO bayzr_JOBS(user_id, job_name, commit, priority, task_id) 
+		res, err2 := this.db.Exec(`INSERT INTO bayzr_JOBS(user_id, job_name, commit, priority, task_id, descr) 
                                         VALUES(?,?,?,?,?,?)`, owner_id, name, commit, priority, task_id, descr)
 		if err2 != nil {
 			return err2, 0
@@ -1178,7 +1178,7 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 
 		stmtOut, err := this.db.Prepare(`select t1.id, t1.user_id, t2.login, t2.name, t1.job_name, 
 			t1.commit, t3.name, t3.task_type, t3.source, t3.pkgs_list, t3.build_cmds, t3.check_config, 
-			t3.result_file from bayzr_JOBS as t1 join bayzr_USER as t2 on t2.id = t1.user_id 
+			t3.result_file, t3.use_branch from bayzr_JOBS as t1 join bayzr_USER as t2 on t2.id = t1.user_id 
 			join bayzr_TASK as t3 on t3.id = t1.task_id where t1.id = ?`)
 		if err != nil {
 			return err, map[string]string{}
@@ -1199,11 +1199,12 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 			t3_build_cmds   string
 			t3_check_config string
 			t3_result_file  string
+			t3_use_branch   string
 		)
 
 		err = stmtOut.QueryRow(id).Scan(&t1_id, &t1_user_id, &t2_login, &t2_name, &t1_job_name,
 			&t1_commit, &t3_name, &t3_task_type, &t3_source, &t3_pkgs_list, &t3_build_cmds, &t3_check_config,
-			&t3_result_file)
+			&t3_result_file, &t3_use_branch)
 		if err != nil && err != sql.ErrNoRows {
 			return err, map[string]string{}
 		}
@@ -1224,6 +1225,7 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 				"cmds":        t3_build_cmds,
 				"config":      t3_check_config,
 				"result_file": t3_result_file,
+				"use_branch":  t3_use_branch,
 			}
 			return nil, res
 		}
@@ -1278,7 +1280,7 @@ func (this *MySQLSaver) GetOut(id int) (error, [][]string) {
 	}
 	defer stmtOut.Close()
 
-	rows, err := stmtOut.Query()
+	rows, err := stmtOut.Query(id)
 	if err != nil && err != sql.ErrNoRows {
 		return err, result
 	}
@@ -1323,13 +1325,13 @@ func (this *MySQLSaver) GetBuildId(name string) (error, int) {
 
 func (this *MySQLSaver) GetResult(id int) (error, []string) {
 	result := []string{}
-	stmtOut, err := this.db.Prepare(`select file_string from bayzr_err_extend_file where build_id = ? order by id`)
+	stmtOut, err := this.db.Prepare(`select file_string from bayzr_err_extend_file where build_number = ? order by id`)
 	if err != nil {
 		return err, []string{}
 	}
 	defer stmtOut.Close()
 
-	rows, err := stmtOut.Query()
+	rows, err := stmtOut.Query(id)
 	if err != nil && err != sql.ErrNoRows {
 		return err, result
 	}

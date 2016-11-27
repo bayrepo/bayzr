@@ -266,10 +266,19 @@ func (this *CiExec) Run(id int, conf string) error {
 					}
 				}
 			}
-			err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(taskInfo["commit"], " \n")})
-			if err != nil {
-				this.MakeFakeOuptut("Error: " + err.Error())
-				return err
+
+			if taskInfo["use_branch"] == "0" {
+				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(taskInfo["commit"], " \n")})
+				if err != nil {
+					this.MakeFakeOuptut("Error: " + err.Error())
+					return err
+				}
+			} else {
+				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkbranch", "remotes/origin/" + strings.Trim(taskInfo["commit"], " \n")})
+				if err != nil {
+					this.MakeFakeOuptut("Error: " + err.Error())
+					return err
+				}
 			}
 		}
 	}
@@ -304,9 +313,9 @@ func (this *CiExec) Run(id int, conf string) error {
 		return err
 	}
 
-	sona_config = []byte(taskInfo["config"] + fmt.Sprintf(`
-	[database]
-     connecturl=%s
+	sona_config = []byte(strings.Replace(taskInfo["config"],"\r","",-1) + fmt.Sprintf(`
+[database]
+connecturl=%s
 	`, this.config))
 	err = ioutil.WriteFile("bzr.conf", sona_config, 0644)
 
@@ -316,7 +325,7 @@ func (this *CiExec) Run(id int, conf string) error {
 		return err
 	}
 
-	cmds_raw := strings.Split(taskInfo["cmds"], "\n")
+	cmds_raw := strings.Split(strings.Replace(taskInfo["cmds"],"\r","",-1), "\n")
 
 	for _, val := range cmds_raw {
 		cmd_macros := strings.Trim(val, " \n\t")
@@ -340,12 +349,14 @@ func (this *CiExec) Run(id int, conf string) error {
 		}
 	}
 
-    this.MakeFakeOuptut("+++: Save result to " + taskInfo["result_file"])
+	this.MakeFakeOuptut("+++: Save result to " + taskInfo["result_file"])
 	if _, err := os.Stat(taskInfo["result_file"]); err == nil {
 		if err := this.con.InsertExtInfoFromResult(taskInfo["result_file"], taskInfo["name"]+"."+taskInfo["id"]); err != nil {
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
+	} else {
+	    this.MakeFakeOuptut("Error: " + taskInfo["result_file"] + " not found")
 	}
 
 	sonar_tp := task_type

@@ -32,6 +32,15 @@ BuildRequires: golang-bin >= 1.6.2
 %description
 The tool for simplification of using some code static analyzers such as cppcheck, oclint, rats etc
 
+%if 0%{?rhel} >= 7
+%package citool
+Summary:  The tool for making SonarQube and bayzr integration
+Requires: git systemd wget unzip shadow-utils
+
+%description citool
+The tool for making SonarQube and bayzr integration
+%endif
+
 %prep
 %setup -q
 
@@ -39,7 +48,8 @@ The tool for simplification of using some code static analyzers such as cppcheck
 export GOROOT=/usr/lib/golang/
 export PATH=$PATH:$GOROOT/bin
 export GOPATH=$(pwd)
-export PATH=$PATH:$GOPATH/bin
+export PATH=$PATH:$GOPATH/bin:$GOPATH/go-bindata/bin:$GOPATH/cisetup/bin
+export GOPATH=$GOPATH:$GOPATH/go-bindata/:$GOPATH/cisetup/
 
 /usr/bin/go build -o bin/bayzr main
 
@@ -47,6 +57,14 @@ export PATH=$PATH:$GOPATH/bin
 #cd sonarqube
 #mvn clean package
 #cd ..
+
+%if 0%{?rhel} >= 7
+/usr/bin/go build -o bin/go-bindata github.com/jteeuwen/go-bindata/go-bindata
+
+bin/go-bindata -o cisetup/src/data/data.go -pkg data cisetup/src/data cisetup/src/data/css cisetup/src/data/js cisetup/src/data/fonts cisetup/src/data/js/i18n
+/usr/bin/go build -o bin/citool cisetup/src/main/main.go
+
+%endif
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -82,8 +100,38 @@ install -D -p -m 644 rpm/COPYRIGHT %{buildroot}%{_datadir}/doc/%{pkgname}/COPYRI
 
 install -D -p -m 644 sonarqube/jar/bayzr-plugin-0.0.1-rel1.jar %{buildroot}%{_datarootdir}/bzr.java/
 
+%if 0%{?rhel} >= 7
+#citool
+mkdir -p $RPM_BUILD_ROOT%{_sbindir}
+mkdir -p $RPM_BUILD_ROOT/mnt/chroot/
+mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system/
+install -D -p -m 755 bin/citool %{buildroot}%{_sbindir}
+install -D -p -m 600 cisetup/cfg/citool.ini %{buildroot}%{_sysconfdir}
+install -D -p -m 644 cisetup/cfg/citool.service %{buildroot}/usr/lib/systemd/system/
+%endif
+
+%if 0%{?rhel} >= 7
+%pre citool
+if [ $1 -gt 1 ] ; then
+adduser checker
+fi
+
+%posttrans citool
+/usr/bin/systemctl daemon-reload
+setcap cap_sys_chroot+ep %{_sbindir}/citool
+%endif
+
 %clean
 rm -rf $RPM_BUILD_ROOT
+
+%if 0%{?rhel} >= 7
+%files citool
+%attr(600, checker, checker) %config(noreplace) %{_sysconfdir}/citool.ini
+%defattr(-,root,root,-)
+%dir /mnt/chroot/
+%{_sbindir}/citool
+/usr/lib/systemd/system/citool.service
+%endif
 
 %files
 %defattr(-,root,root,-)

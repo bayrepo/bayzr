@@ -44,7 +44,7 @@ public class BayzrProperties {
         .description("Add build by ID more then last id")
         .defaultValue("no")
         .category(CATEGORY)
-        .build()
+        .build(),
       PropertyDefinition.builder(DBPARAM_KEY)
         .name("JDBC URL")
         .description("Db connevtion parameters (URL)")

@@ -1,0 +1,19 @@
+[Unit]
+Description=SonarQube abd BayZR intergation tool
+After=mysql.service
+
+[Service]
+Environment=GIN_MODE=release
+Type=simple
+ExecStart=/usr/sbin/citool -server-run
+Restart=on-failure
+RestartSec=30
+User=checker
+Group=checker
+StandardInput=tty
+TTYPath=/dev/tty2
+TTYReset=yes
+TTYVHangup=yes
+
+[Install]
+WantedBy=multi-user.target
