@@ -863,7 +863,7 @@ func SquidActionDelete(parent interface{}) error {
 func CiActionInstall(parent interface{}) error {
 	this := parent.(*ActionSaver)
 	this.SetParam("success", "ciserver")
-	err, _, _, _ = executeCommand(makeArgsFromString("systemctl enable citool"))
+	err, _, _, _ := executeCommand(makeArgsFromString("systemctl enable citool"))
 	if err != nil {
 		return err
 	}
@@ -897,8 +897,13 @@ func CiActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-
+	
 	err, _, _, _ = executeCommand(makeArgsFromString("systemctl start citool"))
+	if err != nil {
+		return err
+	}
+
+	err, _, _, _ = executeCommand(makeArgsFromString("/usr/bin/chown checker:checker /etc/citool.ini"))
 	if err != nil {
 		return err
 	}

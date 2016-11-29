@@ -351,7 +351,7 @@ connecturl=%s
 
 	this.MakeFakeOuptut("+++: Save result to " + taskInfo["result_file"])
 	if _, err := os.Stat(taskInfo["result_file"]); err == nil {
-		if err := this.con.InsertExtInfoFromResult(taskInfo["result_file"], taskInfo["name"]+"."+taskInfo["id"]); err != nil {
+		if err := this.con.InsertExtInfoFromResult(taskInfo["result_file"], taskInfo["task_name"]+"."+taskInfo["id"]); err != nil {
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}

@@ -112,7 +112,7 @@ install -D -p -m 644 cisetup/cfg/citool.service %{buildroot}/usr/lib/systemd/sys
 
 %if 0%{?rhel} >= 7
 %pre citool
-if [ $1 -gt 1 ] ; then
+if [ $1 -eq 1 ] ; then
 adduser checker
 fi
 
