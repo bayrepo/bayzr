@@ -72,8 +72,8 @@
 						<th>Команды</th>
 						<th>Период</th>
 						<th>Доступ</th>
-						<th>Конфигурация</th>
 						<th>Кто создал</th>
+						<th>Ветка</th>
 						<th>Действие</th>
 					</tr>
 {{range .Tasks}}
@@ -88,16 +88,12 @@
 						<td>{{index . 4}}</td>
 						<td>{{index . 5}}</td>
 						<td>
-						{{if eq (index . 6) "0"}}Ежеминутно{{end}}
-						{{if eq (index . 6) "1"}}Ежечасно{{end}}
-						{{if eq (index . 6) "2"}}Ежедневно{{end}}
-						{{if eq (index . 6) "3"}}Ежемесячно{{end}}
-						{{if eq (index . 6) "4"}}Один раз{{end}}
+						{{if eq (index . 6) "0"}}Крон{{end}}
 						{{if eq (index . 6) "5"}}Без периода{{end}}
 						</td>
 						<td>{{index . 10}}</td>
-						<td>{{index . 9}}</td>
 						<td>{{index . 8}}</td>
+						<td>{{index . 12}}</td>
 						<td>
 							<a href="/task/{{index . 0}}">Изменить</a>
 							<a href="/taskdel/{{index . 0}}">Удалить</a>

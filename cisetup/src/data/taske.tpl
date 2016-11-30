@@ -155,18 +155,14 @@
 						<div class="form-group">
 							<label for="TaskPerType">Тип периода</label>
 							<select class="form-control selectpicker" id="TaskPerType" name="TaskPerType">
-								<option value="0" {{if eq .TaskPerType "0"}}selected{{end}}>Ежеминутно</option>
-								<option value="1" {{if eq .TaskPerType "1"}}selected{{end}}>Ежечасно</option>
-								<option value="2" {{if eq .TaskPerType "2"}}selected{{end}}>Ежедневно</option>
-								<option value="3" {{if eq .TaskPerType "3"}}selected{{end}}>Ежемесячно</option>
-								<option value="4" {{if eq .TaskPerType "4"}}selected{{end}}>Один раз</option>
+								<option value="0" {{if eq .TaskPerType "0"}}selected{{end}}>Крон</option>
 								<option value="5" {{if eq .TaskPerType "5"}}selected{{end}}>Без периода</option>
 							</select>
 						</div>
 						<div class="form-group{{if .TaskPeriod_err}} has-error{{end}}">
 							<label for="TaskPeriod">Время периода</label>
-							<!-- Элемент HTML с id равным datetimepicker1 -->
-							<input type="text" class="form-control bfh-phone" name="TaskPeriod" id="TaskPeriod" data-format="dd/dd/dddd dd:dd:dd" value="{{.TaskPeriod}}"/>
+							<!-- Элемент HTML с id равным datetimepicker1 data-format="dd/dd/dddd dd:dd:dd" -->
+							<input type="text" class="form-control input-sm" name="TaskPeriod" id="TaskPeriod" value="{{.TaskPeriod}}"/>
 							{{if .TaskPeriod_err}}<span class="help-block">{{.TaskPeriod_err}}</span>{{end}}
 						</div>
 						<div class="form-group">
@@ -186,6 +182,10 @@
 							<label for="TaskResult">Файл результата</label>
 							<input type="text" class="form-control input-sm" id="TaskResult" name="TaskResult" value="{{.TaskResult}}" />
 							{{if .TaskResult_err}}<span class="help-block">{{.TaskResult_err}}</span>{{end}}
+						</div>
+						<div class="form-group">
+							<label for="TaskBrn">Ветка для периодических задач</label>
+							<input type="text" class="form-control input-sm" id="TaskBrn" name="TaskBrn" value="{{.TaskBrn}}" />
 						</div>
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>

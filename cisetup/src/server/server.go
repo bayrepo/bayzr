@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"html/template"
 )
 
 //Вспомогательные функции
@@ -121,6 +122,7 @@ func (this *CiServer) LoadTemplates() (multitemplate.Render, error) {
 		return templates, err
 	}
 	templates.AddFromString("out", string(html_resource))
+	templates.AddFromString("result", "{{.Cont}}")
 	return templates, nil
 }
 
@@ -245,6 +247,7 @@ func (this *CiServer) Run(port int, conf string) error {
 		authorized := router.Group("/api", gin.BasicAuth(pass))
 
 		authorized.GET("/ping", this.ping)
+		authorized.POST("/jobjson", this.addtjson)
 
 	}
 	router.Run(fmt.Sprintf(":%d", port))
@@ -686,6 +689,71 @@ func (this *CiServer) ping(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "alive", "status": http.StatusOK})
 }
 
+func (this *CiServer) addtjson(c *gin.Context) {
+	user_token := c.DefaultPostForm("user_token", "")
+	task_token := c.DefaultPostForm("task_token", "")
+	if user_token == "" || task_token == "" {
+		c.JSON(http.StatusForbidden, gin.H{"status": "forbidden"})
+		return
+	}
+
+	var con mysqlsaver.MySQLSaver
+	dbErr := con.Init(this.config, nil)
+	if dbErr != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", dbErr.Error()))
+		return
+	}
+	defer con.Finalize()
+
+	u_err, u_id, u_login := con.GetUserAuth(user_token)
+	if u_err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": u_err, "status": http.StatusOK, "result": "error"})
+		return
+	}
+
+	if u_id == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "no user", "status": http.StatusOK, "result": "error"})
+		return
+	}
+
+	t_err, t_id, t_ul := con.GetTaskAuth(task_token)
+	if t_err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": u_err, "status": http.StatusOK, "result": "error"})
+		return
+	}
+
+	if t_id == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "no task", "status": http.StatusOK, "result": "error"})
+		return
+	}
+
+	fnd_user := false
+	for _, val := range t_ul {
+		if val == u_login {
+			fnd_user = true
+			break
+		}
+	}
+
+	if fnd_user == false {
+		c.JSON(http.StatusForbidden, gin.H{"status": "forbidden"})
+		return
+	}
+
+	job_name := "Job for " + u_login
+	job_prior := "2"
+	job_commit := c.DefaultPostForm("commit", "")
+	job_task := t_id
+	job_descr := c.DefaultPostForm("descr", "API BUILD")
+
+	if err, j_id := con.InsertJob(u_id, job_name, job_commit, job_prior, job_task, job_descr); err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": err, "status": http.StatusOK, "result": "error"})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{"message": "done", "status": http.StatusOK, "result": fmt.Sprintf("%d", j_id)})
+	}
+}
+
 type TaskForm struct {
 	TaskName       string   `form:"TaskName"`
 	TaskType       string   `form:"TaskType"`
@@ -699,6 +767,7 @@ type TaskForm struct {
 	TaskConfig     []string `form:"TaskConfig"`
 	TaskBranch     string   `form:"TaskBranch"`
 	TaskResult     string   `form:"TaskResult"`
+	TaskBrn        string   `form:"TaskBrn"`
 }
 
 func (this *CiServer) tasks(c *gin.Context) {
@@ -756,6 +825,7 @@ func (this *CiServer) tasks(c *gin.Context) {
 	hdr["TaskPeriod"] = ""
 	hdr["TaskUsers"] = p_u_list
 	hdr["TaskConfig"] = ""
+	hdr["TaskBrn"] = ""
 
 	hdr["User"] = session.Get("login").(string)
 
@@ -818,6 +888,7 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 	hdr["TaskUsers"] = p_u_list
 	hdr["TaskConfig"] = ""
 	hdr["TaskResult"] = "result.html"
+	hdr["TaskBrn"] = "result.html"
 
 	var form TaskForm
 	if c.Bind(&form) == nil {
@@ -895,12 +966,13 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 		} else {
 			hdr["TaskResult"] = form.TaskResult
 		}
+		hdr["TaskBrn"] = form.TaskBrn
 
 		if fnd_err == false {
 			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"].(string))
 			if err, _ := con.SaveTask(sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
-				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult); err != nil {
+				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {
@@ -1041,6 +1113,7 @@ func (this *CiServer) tasks_edit(c *gin.Context) {
 	hdr["TaskConfig"] = lst[9]
 	hdr["TaskToken"] = lst[11]
 	hdr["TaskResult"] = lst[13]
+	hdr["TaskBrn"] = lst[14]
 
 	hdr["User"] = session.Get("login").(string)
 
@@ -1140,6 +1213,7 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 	hdr["TaskConfig"] = lst[9]
 	hdr["TaskToken"] = lst[11]
 	hdr["TaskResult"] = lst[13]
+	hdr["TaskBrn"] = lst[14]
 
 	var form TaskForm
 	if c.Bind(&form) == nil {
@@ -1218,12 +1292,13 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 		} else {
 			hdr["TaskResult"] = form.TaskResult
 		}
+		hdr["TaskBrn"] = form.TaskBrn
 
 		if fnd_err == false {
 			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"].(string))
 			if err := con.UpdateTask(tid_number, sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
-				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult); err != nil {
+				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {
@@ -1545,7 +1620,8 @@ func (this *CiServer) result(c *gin.Context) {
 		this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
 		return
 	} else {
-
-		c.String(200, strings.Join(lst, "\n"))
+		hdr := gin.H{}
+		hdr["Cont"] = template.HTML(strings.Join(lst, "\n"))
+		c.HTML(200, "result", hdr)
 	}
 }

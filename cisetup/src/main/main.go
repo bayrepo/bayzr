@@ -887,7 +887,7 @@ func CiActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	data2_2_tmp, err := data.Asset("cisetup/src/data/citool.ini")
 	if err != nil {
 		return err
@@ -897,7 +897,7 @@ func CiActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("systemctl start citool"))
 	if err != nil {
 		return err
@@ -969,14 +969,22 @@ func main() {
 	if jobRunner > 0 {
 		var rnr runner.CiRunner
 		rnr.SetRunners(int64(jobRunner))
-		rnr.Run("/etc/citool.ini")
+		err := rnr.Run("/etc/citool.ini")
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 		os.Exit(0)
 	}
 
 	if taskRunner > 0 {
 		log.Printf("Running task %d", taskRunner)
 		var ex executor.CiExec
-		ex.Run(int(taskRunner), "/etc/citool.ini")
+		err := ex.Run(int(taskRunner), "/etc/citool.ini")
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 		os.Exit(0)
 	}
 

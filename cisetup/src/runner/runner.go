@@ -3,6 +3,7 @@ package runner
 import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/robfig/cron"
 	"github.com/vaughan0/go-ini"
 	"log"
 	"mysqlsaver"
@@ -22,6 +23,8 @@ type CiRunner struct {
 	nmb             string
 	ci_time         int
 	cmd             *exec.Cmd
+	ci_timers       []int
+	ci_cron         *cron.Cron
 }
 
 func (this *CiRunner) readConfig(ini_file string) error {
@@ -162,6 +165,41 @@ func (this *CiRunner) _scanStartedChilds(found_threads bool) (error, bool) {
 	return nil, found_threads
 }
 
+func (this *CiRunner) CronJob(task_id int, task_name string, task_commit string) {
+
+	var con mysqlsaver.MySQLSaver
+	dbErr := con.Init(this.config, nil)
+	if dbErr != nil {
+		log.Printf("%s\n", dbErr.Error())
+		return
+	}
+	defer con.Finalize()
+
+	if err, fnd, _, id := con.CheckUser("su_checker", "nopasswd"); err != nil {
+		log.Printf("DataBase error %s\n", err.Error())
+		return
+	} else {
+		if fnd {
+			if err, _ := con.InsertJob(id, fmt.Sprintf("Autostart task %s", task_name), task_commit, "2", task_id, "Auto task"); err != nil {
+				log.Printf("DataBase error %s\n", err.Error())
+				return
+			}
+		}
+	}
+
+}
+
+type CiJob struct {
+	task_id     int
+	task_name   string
+	task_commit string
+	app         *CiRunner
+}
+
+func (this CiJob) Run() {
+	this.app.CronJob(this.task_id, this.task_name, this.task_commit)
+}
+
 func (this *CiRunner) Run(conf string) error {
 	this.ci_pids = []int{}
 	this.ci_busy_threads = 0
@@ -175,7 +213,7 @@ func (this *CiRunner) Run(conf string) error {
 		return fmt.Errorf("DataBase saving error %s\n", dbErr)
 	}
 
-	con.Finalize()
+	defer con.Finalize()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -183,6 +221,64 @@ func (this *CiRunner) Run(conf string) error {
 		for sig := range c {
 			log.Printf("Got signal %s", sig.String())
 			os.Exit(0)
+		}
+	}()
+
+	err_t, timers := con.GetListOfTimedId()
+	if err_t != nil {
+		return err_t
+	}
+
+	this.ci_cron = cron.New()
+	for _, val := range timers {
+		task_id_int, err_c := strconv.Atoi(val[0])
+		if err_c != nil {
+			return err_c
+		}
+
+		this.ci_timers = append(this.ci_timers, task_id_int)
+		this.ci_cron.AddJob(val[2], CiJob{task_id_int, val[4], val[3], this})
+
+	}
+	this.ci_cron.Start()
+	defer this.ci_cron.Stop()
+
+	ticker := time.NewTicker(time.Second * 60)
+	go func() {
+		for _ = range ticker.C {
+			var con mysqlsaver.MySQLSaver
+			dbErr := con.Init(this.config, nil)
+			if dbErr != nil {
+				return
+			}
+
+			defer con.Finalize()
+
+			err_t, timers := con.GetListOfTimedId()
+			if err_t != nil {
+				return
+			}
+
+			for _, val := range timers {
+				fnd := false
+				task_id_int, err_c := strconv.Atoi(val[0])
+				if err_c != nil {
+					return
+				}
+
+				for _, i_val := range this.ci_timers {
+					if i_val == task_id_int {
+						fnd = true
+						break
+					}
+				}
+
+				if fnd == false {
+					this.ci_timers = append(this.ci_timers, task_id_int)
+					this.ci_cron.AddJob(val[2], CiJob{task_id_int, val[4], val[3], this})
+				}
+			}
+
 		}
 	}()
 
@@ -220,6 +316,9 @@ func (this *CiRunner) Run(conf string) error {
 		}
 		found_threads = false
 	}
+
+	ticker.Stop()
+	return nil
 
 }
 

@@ -65,6 +65,7 @@ cp ../sonarqube/src/main/resources/bayzr/*.xml /etc/bzr.d/
 /usr/bin/go get github.com/gin-gonic/contrib/sessions
 /usr/bin/go get github.com/gin-gonic/contrib/static
 /usr/bin/go get github.com/gin-gonic/contrib/renders/multitemplate
+/usr/bin/go get github.com/robfig/cron
 
 
 /usr/bin/go build -o ../bin/go-bindata ../src/github.com/jteeuwen/go-bindata/go-bindata
