@@ -15,6 +15,11 @@ import (
 	"time"
 )
 
+type CiTimers struct {
+	CiId    int
+	CiValue string
+}
+
 type CiRunner struct {
 	ci_threads      int64
 	config          string
@@ -23,7 +28,7 @@ type CiRunner struct {
 	nmb             string
 	ci_time         int
 	cmd             *exec.Cmd
-	ci_timers       []int
+	ci_timers       []CiTimers
 	ci_cron         *cron.Cron
 }
 
@@ -236,12 +241,11 @@ func (this *CiRunner) Run(conf string) error {
 			return err_c
 		}
 
-		this.ci_timers = append(this.ci_timers, task_id_int)
+		this.ci_timers = append(this.ci_timers, CiTimers{task_id_int, val[2]})
 		this.ci_cron.AddJob(val[2], CiJob{task_id_int, val[4], val[3], this})
 
 	}
 	this.ci_cron.Start()
-	defer this.ci_cron.Stop()
 
 	ticker := time.NewTicker(time.Second * 60)
 	go func() {
@@ -259,6 +263,32 @@ func (this *CiRunner) Run(conf string) error {
 				return
 			}
 
+			rst := flase
+
+			for _, val := range timers {
+				task_id_int, err_c := strconv.Atoi(val[0])
+				if err_c != nil {
+					return
+				}
+
+				for _, i_val := range this.ci_timers {
+					if i_val.CiId == task_id_int && i_val.CiValue != val[2] {
+						rst = true
+						break
+					}
+				}
+
+				if rst == true {
+					break
+				}
+
+			}
+			if rst == true {
+				this.ci_cron.Stop()
+				this.ci_cron = cron.New()
+				this.ci_cron.Start()
+			}
+
 			for _, val := range timers {
 				fnd := false
 				task_id_int, err_c := strconv.Atoi(val[0])
@@ -267,14 +297,14 @@ func (this *CiRunner) Run(conf string) error {
 				}
 
 				for _, i_val := range this.ci_timers {
-					if i_val == task_id_int {
+					if i_val.CiId == task_id_int {
 						fnd = true
 						break
 					}
 				}
 
 				if fnd == false {
-					this.ci_timers = append(this.ci_timers, task_id_int)
+					this.ci_timers = append(this.ci_timers, CiTimers{task_id_int, val[2]})
 					this.ci_cron.AddJob(val[2], CiJob{task_id_int, val[4], val[3], this})
 				}
 			}
@@ -318,6 +348,7 @@ func (this *CiRunner) Run(conf string) error {
 	}
 
 	ticker.Stop()
+	this.ci_cron.Stop()
 	return nil
 
 }
