@@ -184,6 +184,7 @@ type PluginInfoDataContainer struct {
 	fresh         bool
 	compose       bool
 	extraoptions  map[string][]string
+	checkonly     []string
 
 	//tmp no printable
 	cmd_for_fresh          []string
@@ -509,6 +510,11 @@ func (obj *PluginInfoDataContainer) Parse(file_name string) error {
 				return err
 			} else {
 				obj.options = nm
+			}
+			if nm, err := findSliceValue(preScan, "ONLYCHEK"); err != nil {
+				return err
+			} else {
+				obj.checkonly = nm
 			}
 			if nm, err := findSliceValue(preScan, "DEFS"); err == nil {
 				obj.defs = nm
@@ -1049,6 +1055,10 @@ func (obj *PluginInfoDataContainer) GetCompose() bool {
 	return obj.compose
 }
 
+func (obj *PluginInfoDataContainer) GetOnlyCheck() []string {
+	return obj.checkonly
+}
+
 func (obj *PluginInfoDataContainer) GetExtraOptions(file_name string) ([]string, bool) {
 	for f_n, value := range obj.extraoptions {
 		if strings.Contains(file_name, f_n) == true {
@@ -1061,4 +1071,11 @@ func (obj *PluginInfoDataContainer) GetExtraOptions(file_name string) ([]string,
 func (obj *PluginInfoDataContainer) SetAccumulatedExtraOptions(opts []string) {
 	obj.accumulated_extra_opts = append(obj.accumulated_extra_opts, opts...)
 	obj.accumulated_extra_opts = configparser.RemoveDuplicate(obj.accumulated_extra_opts)
+}
+
+func (obj *PluginInfoDataContainer) IsOnlyCheck() bool {
+	if len(obj.checkonly) > 0 {
+		return true
+	}
+	return false
 }

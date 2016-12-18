@@ -859,6 +859,76 @@ func SquidActionDelete(parent interface{}) error {
 
 /* END: squid and yumbootstrap install */
 
+/* BEGIN: ShelShecker install */
+func ShActionInstall(parent interface{}) error {
+	this := parent.(*ActionSaver)
+	this.SetParam("ok", "epel")
+	err, _, _, _ := executeCommand(makeArgsFromString("yum install -y yum-utils"))
+	if err != nil {
+		return err
+	}
+	err, _, _, _ = executeCommand(makeArgsFromString("rpm -ihv https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"))
+	if err != nil {
+		return err
+	}
+	this.SetParam("success", "epel")
+	err, _, _, _ = executeCommand(makeArgsFromString("/usr/bin/yum-config-manager --enablerepo=epel-testing"))
+	if err != nil {
+		return err
+	}
+	err, _, _, _ = executeCommand(makeArgsFromString("yum install -y cabal-install"))
+	if err != nil {
+		return err
+	}
+	err, _, _, _ = executeCommand(makeArgsFromString("cabal update"))
+	if err != nil {
+		return err
+	}
+	err, _, _, _ = executeCommand(makeArgsFromString("wget https://github.com/koalaman/shellcheck/archive/master.zip"))
+	if err != nil {
+		return err
+	}
+	err, _, _, _ = executeCommand(makeArgsFromString("unzip master.zip"))
+	if err != nil {
+		return err
+	}
+	
+	os.Chdir("shellcheck-master")
+	
+	err, _, _, _ = executeCommand(makeArgsFromString("cabal update"))
+	if err != nil {
+		return err
+	}
+	
+	err, _, _, _ = executeCommand(makeArgsFromString("cabal install --force-reinstalls"))
+	if err != nil {
+		return err
+	}
+	
+	err, _, _, _ = executeCommand(makeArgsFromString("mv /root/.cabal/bin/shellcheck /usr/bin/"))
+	if err != nil {
+		return err
+	}
+	
+	err, _, _, _ = executeCommand(makeArgsFromString("rpm -e epel-release"))
+	if err != nil {
+		return err
+	}
+	this.SetParam("ok", "epel")
+
+	return nil
+}
+
+func ShActionDelete(parent interface{}) error {
+	this := parent.(*ActionSaver)
+	if err := deactivationCommonCmd(this, "epel", "rpm -e epel-release"); err != nil {
+		return err
+	}
+	return nil
+}
+
+/* END: ShellChecker install */
+
 /* BEGIN: ciserver install */
 func CiActionInstall(parent interface{}) error {
 	this := parent.(*ActionSaver)
@@ -908,6 +978,15 @@ func CiActionInstall(parent interface{}) error {
 		return err
 	}
 	this.SetParam("success", "ciserver_st")
+	
+	data3_3, err := data.Asset("cisetup/src/data/config")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("/root/config", data3_3, 0400)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -1004,6 +1083,7 @@ func main() {
 			actionsList = append(actionsList, MakeActionSaver("Install BayZR", BayZRActionInstall, BayZRActionDelete))
 			actionsList = append(actionsList, MakeActionSaver("Install SonarQube plugins", PluginActionInstall, PluginActionDelete))
 			actionsList = append(actionsList, MakeActionSaver("Install Squid and YumBootsTrap plugins", SquidActionInstall, SquidActionDelete))
+			actionsList = append(actionsList, MakeActionSaver("Install Shellcheck", ShActionInstall, ShActionDelete))
 			actionsList = append(actionsList, MakeActionSaver("Install Ci Server", CiActionInstall, CiActionDelete))
 			break
 		case 2:

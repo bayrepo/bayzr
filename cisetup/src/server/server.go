@@ -11,11 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/vaughan0/go-ini"
+	"html/template"
 	"mysqlsaver"
 	"net/http"
 	"strconv"
 	"strings"
-	"html/template"
 )
 
 //Вспомогательные функции
@@ -689,6 +689,11 @@ func (this *CiServer) ping(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "alive", "status": http.StatusOK})
 }
 
+//Example:
+//curl -u su_admin:7c542b69b3f8af507e7808eed20b0d
+// --data "user_token=7c542b69b3f8af507e7808eed20b0d&
+//task_token=6fae706abecfbef0a8d1b3b7f775a7
+//&commit=master&descr=my" http://127.0.0.1:11000/api/jobjson
 func (this *CiServer) addtjson(c *gin.Context) {
 	user_token := c.DefaultPostForm("user_token", "")
 	task_token := c.DefaultPostForm("task_token", "")
@@ -768,6 +773,8 @@ type TaskForm struct {
 	TaskBranch     string   `form:"TaskBranch"`
 	TaskResult     string   `form:"TaskResult"`
 	TaskBrn        string   `form:"TaskBrn"`
+	TaskDiff       string   `form:"TaskDiff"`
+	TaskPost       []string `form:"TaskPost"`
 }
 
 func (this *CiServer) tasks(c *gin.Context) {
@@ -826,6 +833,8 @@ func (this *CiServer) tasks(c *gin.Context) {
 	hdr["TaskUsers"] = p_u_list
 	hdr["TaskConfig"] = ""
 	hdr["TaskBrn"] = ""
+	hdr["TaskDiff"] = "n"
+	hdr["TaskPost"] = ""
 
 	hdr["User"] = session.Get("login").(string)
 
@@ -889,6 +898,8 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 	hdr["TaskConfig"] = ""
 	hdr["TaskResult"] = "result.html"
 	hdr["TaskBrn"] = "result.html"
+	hdr["TaskDiff"] = "n"
+	hdr["TaskPost"] = ""
 
 	var form TaskForm
 	if c.Bind(&form) == nil {
@@ -968,11 +979,14 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 		}
 		hdr["TaskBrn"] = form.TaskBrn
 
+		hdr["TaskDiff"] = form.TaskDiff
+		hdr["TaskPost"] = strings.Join(form.TaskPost, "\n")
+
 		if fnd_err == false {
 			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"].(string))
 			if err, _ := con.SaveTask(sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
-				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn); err != nil {
+				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn, form.TaskDiff, form.TaskPost); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {
@@ -1114,6 +1128,8 @@ func (this *CiServer) tasks_edit(c *gin.Context) {
 	hdr["TaskToken"] = lst[11]
 	hdr["TaskResult"] = lst[13]
 	hdr["TaskBrn"] = lst[14]
+	hdr["TaskDiff"] = lst[15]
+	hdr["TaskPost"] = lst[16]
 
 	hdr["User"] = session.Get("login").(string)
 
@@ -1214,6 +1230,8 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 	hdr["TaskToken"] = lst[11]
 	hdr["TaskResult"] = lst[13]
 	hdr["TaskBrn"] = lst[14]
+	hdr["TaskDiff"] = lst[15]
+	hdr["TaskPost"] = lst[16]
 
 	var form TaskForm
 	if c.Bind(&form) == nil {
@@ -1293,12 +1311,14 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 			hdr["TaskResult"] = form.TaskResult
 		}
 		hdr["TaskBrn"] = form.TaskBrn
+		hdr["TaskDiff"] = form.TaskDiff
+		hdr["TaskPost"] = strings.Join(form.TaskPost, "\n")
 
 		if fnd_err == false {
 			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"].(string))
 			if err := con.UpdateTask(tid_number, sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
-				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn); err != nil {
+				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn, form.TaskDiff, form.TaskPost); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {

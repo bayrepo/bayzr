@@ -25,7 +25,7 @@ BuildRequires: golang-bin >= 1.6.2
 #%if 0%{?rhel} < 7
 #Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint
 #%else
-#Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint frama-c
+#Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint frama-c pylint
 #%endif
 
 

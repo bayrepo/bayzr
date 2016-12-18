@@ -11,6 +11,7 @@ import (
 	"mysqlsaver"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -24,6 +25,7 @@ type CiExec struct {
 	config   string
 	con      mysqlsaver.MySQLSaver
 	build_id string
+	sIp      string
 }
 
 func (this *CiExec) IsDirectory(path string) (bool, error) {
@@ -45,6 +47,13 @@ func (this *CiExec) readConfig(ini_file string) error {
 		return fmt.Errorf("Can't read MySQL connect parameters")
 	}
 	this.config = config_tmp
+
+	config_tmp, ok = config_data.Get("server", "ip")
+	if !ok {
+		this.sIp = "xx.xx.xx.xx:yyyy"
+	} else {
+		this.sIp = config_tmp
+	}
 
 	return nil
 }
@@ -313,7 +322,7 @@ func (this *CiExec) Run(id int, conf string) error {
 		return err
 	}
 
-	sona_config = []byte(strings.Replace(taskInfo["config"],"\r","",-1) + fmt.Sprintf(`
+	sona_config = []byte(strings.Replace(taskInfo["config"], "\r", "", -1) + fmt.Sprintf(`
 [database]
 connecturl=%s
 	`, this.config))
@@ -325,12 +334,27 @@ connecturl=%s
 		return err
 	}
 
-	cmds_raw := strings.Split(strings.Replace(taskInfo["cmds"],"\r","",-1), "\n")
+	need_diff := ""
+	if taskInfo["diff"] == "y" {
+		need_diff = "-diff patch_f.patch"
+		err = this.Exc([]string{"/usr/bin/git", "format-patch", "-1", strings.Trim(taskInfo["commit"], ">patch_f.patch")})
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+		err = this.Exc([]string{"/usr/bin/cat", "patch_f.patch"})
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+	}
+
+	cmds_raw := strings.Split(strings.Replace(taskInfo["cmds"], "\r", "", -1), "\n")
 
 	for _, val := range cmds_raw {
 		cmd_macros := strings.Trim(val, " \n\t")
 		cmd := strings.Replace(cmd_macros, "{{CHECK}}",
-			fmt.Sprintf("/usr/bin/bayzr -build-author %s -build-name \"%s.%s\" cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"]),
+			fmt.Sprintf("/usr/bin/bayzr -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
 			1)
 		cmds := strings.Split(cmd, " ")
 		cmds_no_empty := []string{}
@@ -356,7 +380,7 @@ connecturl=%s
 			return err
 		}
 	} else {
-	    this.MakeFakeOuptut("Error: " + taskInfo["result_file"] + " not found")
+		this.MakeFakeOuptut("Error: " + taskInfo["result_file"] + " not found")
 	}
 
 	sonar_tp := task_type
@@ -366,6 +390,56 @@ connecturl=%s
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
+	}
+
+	post_cmds_raw := strings.Split(strings.Replace(taskInfo["post"], "\r", "", -1), "\n")
+
+	if len(post_cmds_raw) > 0 {
+		err, result := this.con.GetJob(this.ci_id)
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+		if len(result) > 0 {
+
+			build_id, err_i := strconv.Atoi(result[0][5])
+			if err_i != nil {
+				this.MakeFakeOuptut("Error: " + err_i.Error())
+				return err
+			}
+
+			err, nmb_errors := this.con.GetBuildErrors(build_id)
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+
+			url_report := fmt.Sprintf("%s/result/%d", this.sIp, build_id)
+			url_output := fmt.Sprintf("%s/output/%d", this.sIp, this.ci_id)
+
+			post_script := "#!/bin/bash\n\n"
+
+			for _, val := range post_cmds_raw {
+				cmd_macros := strings.Trim(val, " \n\t")
+				post_script = post_script + cmd_macros + "\n"
+			}
+			err = ioutil.WriteFile("post_execute", []byte(post_script), 0755)
+
+			err = this.Exc([]string{"/usr/bin/cat", "post_execute"})
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+
+			err = this.Exc([]string{"./post_execute", nmb_errors, url_report, url_output})
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+		} else {
+			this.MakeFakeOuptut("Error: no build info found")
+		}
+
 	}
 
 	return nil

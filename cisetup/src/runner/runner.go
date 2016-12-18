@@ -263,7 +263,7 @@ func (this *CiRunner) Run(conf string) error {
 				return
 			}
 
-			rst := flase
+			rst := false
 
 			for _, val := range timers {
 				task_id_int, err_c := strconv.Atoi(val[0])

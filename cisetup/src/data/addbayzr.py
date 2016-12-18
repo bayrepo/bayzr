@@ -7,6 +7,7 @@ import pwd
 import grp
 import yumbootstrap.yum
 import yumbootstrap.log
+from shutil import copyfile
 
 def createUser(username,uid,gid):
     os.system("/usr/sbin/groupadd " + username + " -g " + str(gid))
@@ -28,6 +29,11 @@ if uid != os.getuid():
 
     print "Prepare chroot for non root user"
     os.chown(os.environ['TARGET'], uid, gid)
+    os.mkdir( os.environ['TARGET'] + "/home/" + out_user + "/.ssh/", 0700 );
+    copyfile("/root/config", os.environ['TARGET'] + "/home/" + out_user + "/.ssh/")
+    os.chown(os.environ['TARGET'] + "/home/" + out_user + "/.ssh/", uid, gid)
+    os.chown(os.environ['TARGET'] + "/home/" + out_user + "/.ssh/config", uid, gid)
+
     real_root = os.open("/", os.O_RDONLY)
 
     os.chroot(os.environ['TARGET'])

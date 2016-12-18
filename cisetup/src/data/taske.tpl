@@ -187,6 +187,17 @@
 							<label for="TaskBrn">Ветка для периодических задач</label>
 							<input type="text" class="form-control input-sm" id="TaskBrn" name="TaskBrn" value="{{.TaskBrn}}" />
 						</div>
+						<div class="form-group">
+							<label for="TaskDiff">Список проверяемых файлов</label>
+							<select class="form-control selectpicker" id="TaskDiff" name="TaskDiff">
+								<option value="0" {{if eq .TaskDiff "n"}}selected{{end}}>Полный список</option>
+								<option value="1" {{if eq .TaskDiff "y"}}selected{{end}}>Только измененные файлы</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="TaskPost">Команды выполняемые после аналитики(записываются  в скрипт). 1 - параметр число найденных ошибок, 2 - путь к файлу отчета, 3 - вывод команд</label>
+							<textarea class="form-control" rows="6" id="TaskPost" name="TaskPost">{{.TaskPost}}</textarea>
+						</div>
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>
 				</div>

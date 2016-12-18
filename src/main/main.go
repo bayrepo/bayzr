@@ -19,6 +19,7 @@ package main
 
 import (
 	"checker"
+	"checkonly"
 	"configparser"
 	"crypto/md5"
 	"diffanalyzer"
@@ -34,10 +35,10 @@ import (
 	"replacer"
 	"reporter"
 	"resultanalyzer"
+	"rullerlist"
 	"strings"
 	"templater"
 	"visualmenu"
-	"rullerlist"
 )
 
 const APP_VERSION = "0.1"
@@ -188,6 +189,8 @@ func main() {
 
 	fmt.Println("--------------------Process of gathering source information is begun-----------------")
 
+	list_of_result := []*resultanalyzer.ResultAnalyzerConatiner{}
+
 	cmd_for_fresh := analyzer.GetStringOfCmd(os.Args)
 	cmd_mod_ := cmd_for_fresh
 
@@ -195,13 +198,64 @@ func main() {
 		cmd_mod_ = replace.SetGCCCompilers(cmd_mod_)
 	}
 
+	fmt.Println("--------------------Process of source analyzing is begun (precompilation analyzis-----------------------------")
+	for _, plg := range config.GetListOfPlugins() {
+		obj_item := checker.GetPluginContainerById(plg)
+		if obj_item == nil {
+			continue
+		}
+		if obj_item.IsOnlyCheck() == true {
+			continue
+		}
+
+		fmt.Printf("--------------------Process of source analyzing is begun by plugin %s----------------\n", obj_item.GetName())
+		if obj_item != nil {
+			chk_files := checkonly.Make_CheckOnly()
+			chk_lst := chk_files.Walk()
+			if len(chk_lst) > 0 {
+				for _, file_name := range chk_lst {
+					if config.IsFileIgnored(file_name) == false {
+					    dr, _ := os.Getwd()
+						file_name = outputanalyzer.TransformFileName(file_name, dr)
+						if file_name == "" {
+							continue
+						}
+
+						if cmd, err := obj_item.GetPluginCMD(file_name, []string{}, []string{}, config, []string{}, []string{}, []string{}); err != nil {
+							fmt.Println("Got error when cmd parsed ", err)
+							os.Exit(1)
+						} else {
+							result_analyzer := resultanalyzer.Make_ResultAnalyzerConatiner(file_name, obj_item, current_analyzer_path, *config)
+							list_of_result = append(list_of_result, result_analyzer)
+							if *printAnalizerCommands == true || *dryRun == true {
+								fmt.Println(cmd)
+								if _, ok := list_of_analyzer_commands[obj_item.GetName()]; ok == false {
+									list_of_analyzer_commands[obj_item.GetName()] = []string{}
+								}
+								list_of_analyzer_commands[obj_item.GetName()] = append(list_of_analyzer_commands[obj_item.GetName()], cmd)
+								if *dryRun {
+									continue
+								}
+							}
+							if err := result_analyzer.ParseResultOfCommand(cmd, config); err != nil {
+								fmt.Println("Got error when checker result parsed ", err)
+								os.Exit(1)
+							}
+						}
+
+					}
+				}
+			}
+		}
+	}
+
+	fmt.Println("--------------------Process of compillation is begun-----------------------------")
 	if err = analyzer.ExcecuteComplilationProcess(cmd_mod_); err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("--------------------Process of source analyzing is begun-----------------------------")
 
-	list_of_result := []*resultanalyzer.ResultAnalyzerConatiner{}
 	if len(config.GetListOfPlugins()) > len(list_of_fresh) {
 		for _, plg := range config.GetListOfPlugins() {
 			if is_value_in_array(plg, list_of_fresh) == true {
@@ -209,6 +263,9 @@ func main() {
 			}
 			obj_item := checker.GetPluginContainerById(plg)
 			if obj_item == nil {
+				continue
+			}
+			if obj_item.IsOnlyCheck() == true {
 				continue
 			}
 			fmt.Printf("--------------------Process of source analyzing is begun by plugin %s----------------\n", obj_item.GetName())
@@ -375,6 +432,9 @@ func main() {
 	for _, plg := range list_of_fresh {
 		obj_item := checker.GetPluginContainerById(plg)
 		if obj_item == nil {
+			continue
+		}
+		if obj_item.IsOnlyCheck() == true {
 			continue
 		}
 		fmt.Printf("--------------------Process of source analyzing is begun by plugin %s----------------\n", obj_item.GetName())
