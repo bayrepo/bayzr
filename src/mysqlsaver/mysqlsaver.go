@@ -923,7 +923,7 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 		res, err2 := this.db.Exec(`INSERT INTO bayzr_TASK(name, task_type, source, pkgs_list,
 										build_cmds, period, start_time, user_id, check_config,
 										users_list, auth_tocken, use_branch, result_file, branch, diff, post_analytics_cmd) 
-                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, string(task_type), git, pkgs_list,
+                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, string(task_type), git, pkgs_list,
 			strings.Join(cmds, "\n"), string(per_type), string(period), owner_id,
 			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken(), use_branch, repname, brn, diff, strings.Join(post_cmd, "\n"))
 		if err2 != nil {

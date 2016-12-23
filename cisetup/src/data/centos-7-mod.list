@@ -44,6 +44,8 @@ cppcheck
 oclint
 rats
 splint
+pylint
+rpmlint
 frama-c
 +/var/lib/mysql
 +/usr/local/sonar

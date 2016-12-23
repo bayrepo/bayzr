@@ -14,6 +14,7 @@ public final class BayzrRulesDefinition implements RulesDefinition {
   private static final String PATH_TO_RULES_XML_2 = "/bayzr/bayzr-compiler-gcc-rules.xml";
   private static final String PATH_TO_RULES_XML_3 = "/bayzr/bayzr-cppcheck-rules.xml";
   private static final String PATH_TO_RULES_XML_4 = "/bayzr/bayzr-rats-rules.xml";
+  private static final String PATH_TO_RULES_XML_5 = "/bayzr/python-model.xml";
 
   protected static final String KEY = "bayzr";
   protected static final String NAME = "BayZR";
@@ -32,6 +33,10 @@ public final class BayzrRulesDefinition implements RulesDefinition {
 
   protected String rulesDefinitionFilePath_4() {
     return PATH_TO_RULES_XML_4;
+  }
+
+  protected String rulesDefinitionFilePath_5() {
+    return PATH_TO_RULES_XML_5;
   }
 
   private void defineRulesForLanguage(Context context, String repositoryKey, String repositoryName, String languageKey) {
@@ -59,6 +64,12 @@ public final class BayzrRulesDefinition implements RulesDefinition {
     if (rulesXml_4 != null) {
       RulesDefinitionXmlLoader rulesLoader = new RulesDefinitionXmlLoader();
       rulesLoader.load(repository, rulesXml_4, StandardCharsets.UTF_8.name());
+    }
+
+    InputStream rulesXml_5 = this.getClass().getResourceAsStream(rulesDefinitionFilePath_5());
+    if (rulesXml_5 != null) {
+      RulesDefinitionXmlLoader rulesLoader = new RulesDefinitionXmlLoader();
+      rulesLoader.load(repository, rulesXml_5, StandardCharsets.UTF_8.name());
     }
 
     repository.done();

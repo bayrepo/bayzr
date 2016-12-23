@@ -35,13 +35,13 @@ func ReadFirst100Byte(path string, pattern string) bool {
 	}
 	defer f.Close()
 
-	buf := make([]byte, 100)
+	buf := make([]byte, 20)
 	_, err_read := f.Read(buf)
 	if err_read != nil {
 		return false
 	}
 	str := string(buf)
-	return strings.ContainsAny(str, pattern)
+	return strings.Contains(str, pattern)
 }
 
 func GetExtension(path string, pattern string) bool {
@@ -49,7 +49,7 @@ func GetExtension(path string, pattern string) bool {
 	if ext == "" {
 		return false
 	}
-	return strings.ContainsAny(ext, pattern[1:])
+	return strings.Contains(ext, pattern[1:])
 }
 
 func (this *CheckOnly) Walk() []string {

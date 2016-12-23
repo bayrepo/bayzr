@@ -75,3 +75,8 @@ bin/go-bindata -o cisetup/src/data/data.go -pkg data cisetup/src/data cisetup/sr
 cd -
 
 /usr/bin/go build -o ../bin/citool ../cisetup/src/main/main.go
+
+alternatives --install /usr/bin/java java /opt/jdk1.8.0_101/bin/java 2
+cd ../sonarqube
+mvn clean package
+cd -

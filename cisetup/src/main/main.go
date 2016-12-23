@@ -708,9 +708,9 @@ func PluginActionInstall(parent interface{}) error {
 	if err := sa.InstallPlugin("genericcoverage", aPlugins, iPlugins, true); err != nil {
 		return err
 	}
-	if err := sa.InstallPlugin("python", aPlugins, iPlugins, true); err != nil {
-		return err
-	}
+	//if err := sa.InstallPlugin("python", aPlugins, iPlugins, true); err != nil {
+	//	return err
+	//}
 	if err := sa.InstallPlugin("l10nru", aPlugins, iPlugins, true); err != nil {
 		return err
 	}
@@ -750,12 +750,12 @@ func PluginActionInstall(parent interface{}) error {
 	fmt.Println("Waiting for sonarqube start")
 	time.Sleep(180000 * time.Millisecond)
 
-	if err := sa.SetSonarOption("sonar.python.pylint", "/usr/bin/pylint"); err != nil {
-		return err
-	}
-	if err := sa.SetSonarOption("sonar.python.pylint.reportPath", "pylint_report.txt"); err != nil {
-		return err
-	}
+	//if err := sa.SetSonarOption("sonar.python.pylint", "/usr/bin/pylint"); err != nil {
+	//	return err
+	//}
+	//if err := sa.SetSonarOption("sonar.python.pylint.reportPath", "pylint_report.txt"); err != nil {
+	//	return err
+	//}
 	if err := sa.SetSonarOption("sonar.bayzr.pass", db_passwd); err != nil {
 		return err
 	}

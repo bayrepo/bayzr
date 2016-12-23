@@ -345,6 +345,16 @@ func (storage ConfigparserContainer) IsFileIgnored(name string) bool {
 	return false
 }
 
+func (storage ConfigparserContainer) IsFileOrDirIgnored(name string) bool {
+	for _, val := range storage.ignore {
+		
+		if strings.Trim(val, " \n")!="" && strings.Contains(name, val) {
+			return true
+		}
+	}
+	return false
+}
+
 func (storage ConfigparserContainer) GetListOfPlugins() []string {
 	return storage.checkby
 }

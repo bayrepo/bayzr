@@ -198,7 +198,7 @@ func main() {
 		cmd_mod_ = replace.SetGCCCompilers(cmd_mod_)
 	}
 
-	fmt.Println("--------------------Process of source analyzing is begun (precompilation analyzis-----------------------------")
+	fmt.Println("--------------------Process of source analyzing is begun (precompilation analyzis)-----------------------------")
 	for _, plg := range config.GetListOfPlugins() {
 		obj_item := checker.GetPluginContainerById(plg)
 		if obj_item == nil {
@@ -214,7 +214,7 @@ func main() {
 			chk_lst := chk_files.Walk()
 			if len(chk_lst) > 0 {
 				for _, file_name := range chk_lst {
-					if config.IsFileIgnored(file_name) == false {
+					if config.IsFileOrDirIgnored(file_name) == false {
 					    dr, _ := os.Getwd()
 						file_name = outputanalyzer.TransformFileName(file_name, dr)
 						if file_name == "" {
