@@ -1,0 +1,12 @@
+diff -rupN shellcheck-master-old/ShellCheck.cabal shellcheck-master/ShellCheck.cabal
+--- shellcheck-master-old/ShellCheck.cabal	2016-12-18 03:03:06.000000000 +0300
++++ shellcheck-master/ShellCheck.cabal	2016-12-21 03:03:41.783000000 +0300
+@@ -7,7 +7,7 @@ Category:         Static Analysis
+ Author:           Vidar Holen
+ Maintainer:       vidar@vidarholen.net
+ Homepage:         http://www.shellcheck.net/
+-Build-Type:       Custom
++Build-Type:       Simple
+ Cabal-Version:    >= 1.8
+ Bug-reports:      https://github.com/koalaman/shellcheck/issues
+ Description:

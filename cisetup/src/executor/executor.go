@@ -243,6 +243,17 @@ func (this *CiExec) Run(id int, conf string) error {
 	}
 
 	src_raw_str := strings.Trim(taskInfo["source"], " \n,")
+
+	commits_list := strings.Split(strings.Trim(taskInfo["commit"], " \n"), ",")
+	commit_last := ""
+	commit_first := ""
+	if len(commits_list) == 1 {
+		commit_last = commits_list[0]
+	} else if len(commits_list) > 1 {
+		commit_last = commits_list[1]
+		commit_first = commits_list[0]
+	}
+
 	if len(src_raw_str) > 0 {
 		src_raw_str_raw := strings.Split(src_raw_str, " ")
 		git_list := []string{}
@@ -277,13 +288,13 @@ func (this *CiExec) Run(id int, conf string) error {
 			}
 
 			if taskInfo["use_branch"] == "0" {
-				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(taskInfo["commit"], " \n")})
+				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(commit_last, " \n")})
 				if err != nil {
 					this.MakeFakeOuptut("Error: " + err.Error())
 					return err
 				}
 			} else {
-				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkbranch", "remotes/origin/" + strings.Trim(taskInfo["commit"], " \n")})
+				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkbranch", "remotes/origin/" + strings.Trim(commit_last, " \n")})
 				if err != nil {
 					this.MakeFakeOuptut("Error: " + err.Error())
 					return err
@@ -337,10 +348,18 @@ connecturl=%s
 	need_diff := ""
 	if taskInfo["diff"] == "y" {
 		need_diff = "-diff patch_f.patch"
-		err = this.Exc([]string{"/usr/bin/git", "format-patch", "-1", strings.Trim(taskInfo["commit"], ">patch_f.patch")})
-		if err != nil {
-			this.MakeFakeOuptut("Error: " + err.Error())
-			return err
+		if commit_first == "" {
+			err = this.Exc([]string{"/usr/bin/git", "format-patch", "-1", strings.Trim(commit_last, " \n"), ">patch_f.patch"})
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+		} else {
+			err = this.Exc([]string{"/usr/bin/git", "diff", strings.Trim(commit_first, " \n"), strings.Trim(commit_last, " \n"), ">patch_f.patch"})
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
 		}
 		err = this.Exc([]string{"/usr/bin/cat", "patch_f.patch"})
 		if err != nil {

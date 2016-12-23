@@ -204,13 +204,13 @@ func main() {
 		if obj_item == nil {
 			continue
 		}
-		if obj_item.IsOnlyCheck() == true {
+		if obj_item.IsOnlyCheck() == false {
 			continue
 		}
 
 		fmt.Printf("--------------------Process of source analyzing is begun by plugin %s----------------\n", obj_item.GetName())
 		if obj_item != nil {
-			chk_files := checkonly.Make_CheckOnly()
+			chk_files := checkonly.Make_CheckOnly(obj_item.GetOnlyCheck())
 			chk_lst := chk_files.Walk()
 			if len(chk_lst) > 0 {
 				for _, file_name := range chk_lst {

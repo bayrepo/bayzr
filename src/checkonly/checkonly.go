@@ -15,8 +15,8 @@ func (this CheckOnly) String() string {
 	return fmt.Sprintf("list of check only cond: %s\n", strings.Join(this.list_of_conditions, ", "))
 }
 
-func Make_CheckOnly() *CheckOnly {
-	return &CheckOnly{[]string{}}
+func Make_CheckOnly(lst []string) *CheckOnly {
+	return &CheckOnly{lst}
 }
 
 func isDir(pth string) bool {
@@ -57,7 +57,7 @@ func (this *CheckOnly) Walk() []string {
 
 	fileList := []string{}
 	filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
-		if isDir(path) == true {
+		if isDir(path) == false {
 			is_fnd := false
 			for _, val := range this.list_of_conditions {
 				if val != "" {

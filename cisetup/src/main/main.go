@@ -876,7 +876,7 @@ func ShActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	err, _, _, _ = executeCommand(makeArgsFromString("yum install -y cabal-install"))
+	err, _, _, _ = executeCommand(makeArgsFromString("yum install -y patch cabal-install cabal-dev cabal-rpm ghc-Cabal ghc-Cabal-devel ghc-rpm-macros ghc-containers-devel ghc-directory-devel ghc-json-devel ghc-mtl-devel ghc-parsec-devel ghc-regex-compat-devel ghc-QuickCheck-devel cpphs hscolour chrpath pandoc"))
 	if err != nil {
 		return err
 	}
@@ -894,6 +894,20 @@ func ShActionInstall(parent interface{}) error {
 	}
 	
 	os.Chdir("shellcheck-master")
+	
+	data5, err := data.Asset("cisetup/src/data/shl.patch")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("shl.patch", data5, 0644)
+	if err != nil {
+		return err
+	}
+	
+	err, _, _, _ = executeCommand(makeArgsFromString("patch -p1 < shl.patch"))
+	if err != nil {
+		return err
+	}
 	
 	err, _, _, _ = executeCommand(makeArgsFromString("cabal update"))
 	if err != nil {

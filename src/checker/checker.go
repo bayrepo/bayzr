@@ -511,9 +511,7 @@ func (obj *PluginInfoDataContainer) Parse(file_name string) error {
 			} else {
 				obj.options = nm
 			}
-			if nm, err := findSliceValue(preScan, "ONLYCHEK"); err != nil {
-				return err
-			} else {
+			if nm, err := findSliceValue(preScan, "ONLYCHEK"); err == nil {
 				obj.checkonly = nm
 			}
 			if nm, err := findSliceValue(preScan, "DEFS"); err == nil {
