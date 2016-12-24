@@ -115,7 +115,7 @@
 							</select>
 						</div>
 						<div class="form-group{{if .JobCommit_err}} has-error{{end}}">
-							<label for="JobCommit">Идентификатор изменения в системе контроля версий</label>
+							<label for="JobCommit">Идентификатор изменения в системе контроля версий (имя ветки, коммит, или разница между коммитами). Для разницы коммитов два коммита должны быть указаны через запятую</label>
 							<input type="text" class="form-control input-sm" id="JobCommit" name="JobCommit" value="{{.JobCommit}}"/>
 							{{if .JobCommit_err}}<span class="help-block">{{.JobCommit_err}}</span>{{end}}
 						</div>

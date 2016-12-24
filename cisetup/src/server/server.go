@@ -12,6 +12,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/vaughan0/go-ini"
 	"html/template"
+	"io/ioutil"
 	"mysqlsaver"
 	"net/http"
 	"strconv"
@@ -821,6 +822,12 @@ func (this *CiServer) tasks(c *gin.Context) {
 	}
 	p_u_list = append(p_u_list, []string{"su_admin", "", "Admin"})
 
+	example_config, err_reading := ioutil.ReadFile("/etc/bzr.conf")
+	if err_reading != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("bzr.conf error reading %s\n", err_reading.Error()))
+		return
+	}
+
 	hdr["TaskName"] = ""
 	hdr["TaskType"] = "2"
 	hdr["TaskGit"] = ""
@@ -831,7 +838,7 @@ func (this *CiServer) tasks(c *gin.Context) {
 	hdr["TaskPerType"] = "5"
 	hdr["TaskPeriod"] = ""
 	hdr["TaskUsers"] = p_u_list
-	hdr["TaskConfig"] = ""
+	hdr["TaskConfig"] = string(example_config)
 	hdr["TaskBrn"] = ""
 	hdr["TaskDiff"] = "n"
 	hdr["TaskPost"] = ""

@@ -257,7 +257,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
                 int last_build_id = 0;
 
                 while(rs.next()){
-                   last_build_id  = rs.getInt("last_build_id");
+                   last_build_id  = rs.getInt("id");
                    LOGGER.info("Get last build id: " + last_build_id);
                    break;
                 }

@@ -29,10 +29,7 @@ if uid != os.getuid():
 
     print "Prepare chroot for non root user"
     os.chown(os.environ['TARGET'], uid, gid)
-    os.mkdir( os.environ['TARGET'] + "/home/" + out_user + "/.ssh/", 0700 );
-    copyfile("/root/config", os.environ['TARGET'] + "/home/" + out_user + "/.ssh/")
-    os.chown(os.environ['TARGET'] + "/home/" + out_user + "/.ssh/", uid, gid)
-    os.chown(os.environ['TARGET'] + "/home/" + out_user + "/.ssh/config", uid, gid)
+
 
     real_root = os.open("/", os.O_RDONLY)
 
@@ -45,6 +42,12 @@ if uid != os.getuid():
 
     os.fchdir(real_root)
     os.chroot(".")
+
+    os.mkdir( os.environ['TARGET'] + "/home/" + out_user + "/.ssh/", 0700 );
+    copyfile("/root/config", os.environ['TARGET'] + "/home/" + out_user + "/.ssh/config")
+    os.chown(os.environ['TARGET'] + "/home/" + out_user + "/.ssh/", uid, gid)
+    os.chown(os.environ['TARGET'] + "/home/" + out_user + "/.ssh/config", uid, gid)
+
     # Back to old root
     os.close(real_root)
 

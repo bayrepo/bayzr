@@ -254,6 +254,9 @@ func (this *CiExec) Run(id int, conf string) error {
 		commit_first = commits_list[0]
 	}
 
+	copy_catalog := ""
+	origin_catalog := ""
+
 	if len(src_raw_str) > 0 {
 		src_raw_str_raw := strings.Split(src_raw_str, " ")
 		git_list := []string{}
@@ -278,6 +281,8 @@ func (this *CiExec) Run(id int, conf string) error {
 					return err
 				}
 				if f_name != "." && f_name != ".." && is_d == true {
+					copy_catalog = f_name + ".copy"
+					origin_catalog = f_name
 					err = os.Chdir(f_name)
 					this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to %s", f_name))
 					if err != nil {
@@ -300,6 +305,7 @@ func (this *CiExec) Run(id int, conf string) error {
 					return err
 				}
 			}
+
 		}
 	}
 
@@ -345,6 +351,14 @@ connecturl=%s
 		return err
 	}
 
+	if origin_catalog != "" && copy_catalog != "" {
+		err = this.Exc([]string{"/usr/bin/cp", "-Rv", origin_catalog, copy_catalog})
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+	}
+
 	need_diff := ""
 	if taskInfo["diff"] == "y" {
 		need_diff = "-diff patch_f.patch"
@@ -384,11 +398,26 @@ connecturl=%s
 			}
 		}
 		if len(cmds_no_empty) > 0 {
-			err = this.Exc(cmds_no_empty)
+
+			cmd_script := "#!/bin/bash\n\n"
+
+			for _, val := range cmds_no_empty {
+				cmd_script = cmd_script + val + "\n"
+			}
+			err = ioutil.WriteFile("cmd_execute", []byte(cmd_script), 0755)
+
+			err = this.Exc([]string{"/usr/bin/cat", "cmd_execute"})
 			if err != nil {
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
+
+			err = this.Exc([]string{"./cmd_execute"})
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+
 		}
 	}
 
@@ -404,6 +433,26 @@ connecturl=%s
 
 	sonar_tp := task_type
 	if sonar_tp == "1" {
+
+		if origin_catalog != "" && copy_catalog != "" {
+			err = this.Exc([]string{"/usr/bin/mv", origin_catalog, copy_catalog + ".garbage"})
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+			err = this.Exc([]string{"/usr/bin/cp", "-Rv", copy_catalog, origin_catalog})
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+			err = os.Chdir(origin_catalog)
+			this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to " + origin_catalog))
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+		}
+
 		err = this.Exc([]string{"/usr/local/sonar-scanner/bin/sonar-scanner"})
 		if err != nil {
 			this.MakeFakeOuptut("Error: " + err.Error())
