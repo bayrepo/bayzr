@@ -384,40 +384,30 @@ connecturl=%s
 
 	cmds_raw := strings.Split(strings.Replace(taskInfo["cmds"], "\r", "", -1), "\n")
 
-	for _, val := range cmds_raw {
-		cmd_macros := strings.Trim(val, " \n\t")
-		cmd := strings.Replace(cmd_macros, "{{CHECK}}",
-			fmt.Sprintf("/usr/bin/bayzr -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
-			1)
-		cmds := strings.Split(cmd, " ")
-		cmds_no_empty := []string{}
-		for _, item := range cmds {
-			itm := strings.Trim(item, " \n\t")
-			if item != "" {
-				cmds_no_empty = append(cmds_no_empty, itm)
+	if len(cmds_raw) > 0 {
+		cmd_script := "#!/bin/bash\n\n"
+		for _, val := range cmds_raw {
+			cmd_macros := strings.Trim(val, " \n\t")
+			cmd := strings.Replace(cmd_macros, "{{CHECK}}",
+				fmt.Sprintf("/usr/bin/bayzr -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
+				1)
+
+			if cmd != "" {
+				cmd_script = cmd_script + cmd + "\n"
 			}
 		}
-		if len(cmds_no_empty) > 0 {
+		err = ioutil.WriteFile("cmd_execute", []byte(cmd_script), 0755)
 
-			cmd_script := "#!/bin/bash\n\n"
+		err = this.Exc([]string{"/usr/bin/cat", "cmd_execute"})
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
 
-			for _, val := range cmds_no_empty {
-				cmd_script = cmd_script + val + "\n"
-			}
-			err = ioutil.WriteFile("cmd_execute", []byte(cmd_script), 0755)
-
-			err = this.Exc([]string{"/usr/bin/cat", "cmd_execute"})
-			if err != nil {
-				this.MakeFakeOuptut("Error: " + err.Error())
-				return err
-			}
-
-			err = this.Exc([]string{"./cmd_execute"})
-			if err != nil {
-				this.MakeFakeOuptut("Error: " + err.Error())
-				return err
-			}
-
+		err = this.Exc([]string{"./cmd_execute"})
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
 		}
 	}
 
