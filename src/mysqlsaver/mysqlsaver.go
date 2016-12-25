@@ -1511,3 +1511,28 @@ func (this *MySQLSaver) GetBuildErrors(id int) (error, string) {
 		return nil, read_nmb
 	}
 }
+
+func (this *MySQLSaver) GetListOfFilesWitherr(id string) (error, []string) {
+	result := []string{}
+	stmtOut, err := this.db.Prepare(`select distinct t2.file from bayzr_build_info as t1 join bayzr_err_list as t2 on t1.id = t2.build_number where t1.name_of_build = ? order by 1`)
+	if err != nil {
+		return err, []string{}
+	}
+	defer stmtOut.Close()
+
+	rows, err := stmtOut.Query(id)
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var (
+			t1_line string
+		)
+		if err := rows.Scan(&t1_line); err != nil {
+			return err, []string{}
+		}
+		result = append(result, t1_line)
+	}
+
+	return err, result
+}

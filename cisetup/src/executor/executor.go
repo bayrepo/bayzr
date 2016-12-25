@@ -324,22 +324,7 @@ func (this *CiExec) Run(id int, conf string) error {
 		return err
 	}
 
-	sona_config := []byte(fmt.Sprintf("sonar.projectKey=%s:%s\nsonar.projectName=%s\nsonar.projectVersion=%s\nsonar.sources=.\n",
-		task_keys[0], task_keys[1], task_keys[0], task_keys[2]))
-	err = ioutil.WriteFile("sonar-project.properties", sona_config, 0644)
-
-	if err != nil {
-		this.MakeFakeOuptut("Error: " + err.Error())
-		return err
-	}
-
-	err = this.Exc([]string{"/usr/bin/cat", "sonar-project.properties"})
-	if err != nil {
-		this.MakeFakeOuptut("Error: " + err.Error())
-		return err
-	}
-
-	sona_config = []byte(strings.Replace(taskInfo["config"], "\r", "", -1) + fmt.Sprintf(`
+	sona_config := []byte(strings.Replace(taskInfo["config"], "\r", "", -1) + fmt.Sprintf(`
 [database]
 connecturl=%s
 	`, this.config))
@@ -441,6 +426,34 @@ connecturl=%s
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
+		}
+
+		s_err, s_lst := this.con.GetListOfFilesWitherr(this.build_id)
+		if s_err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+
+		sona_config_s := fmt.Sprintf("sonar.projectKey=%s:%s\nsonar.projectName=%s\nsonar.projectVersion=%s\nsonar.sources=.\nsonar.sourceEncoding=UTF-8\n",
+			task_keys[0], task_keys[1], task_keys[0], task_keys[2])
+
+		if len(s_lst) > 0 {
+			sona_config_s = sona_config_s + "\nsonar.inclusions=" + strings.Join(s_lst, ",") + "\n"
+		} else {
+			sona_config_s = sona_config_s + "\nsonar.inclusions=12345678900987654321.txt\n"
+		}
+
+		err = ioutil.WriteFile("sonar-project.properties", []byte(sona_config_s), 0644)
+
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+
+		err = this.Exc([]string{"/usr/bin/cat", "sonar-project.properties"})
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
 		}
 
 		err = this.Exc([]string{"/usr/local/sonar-scanner/bin/sonar-scanner"})
