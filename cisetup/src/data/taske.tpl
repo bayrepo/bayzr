@@ -149,7 +149,7 @@
 							</select>
 						</div>
 						<div class="form-group">
-							<label for="TaskCmds">Команды сборки (новая команда с новой строки)  {{CHECK}} для вставки команды анализа сиходников</label>
+							<label for="TaskCmds">Команды сборки (новая команда с новой строки)  {{"{{"}}CHECK{{"}}"}} для вставки команды анализа сиходников</label>
 							<textarea class="form-control" rows="6" id="TaskCmds" name="TaskCmds">{{.TaskCmds}}</textarea>
 						</div>
 						<div class="form-group">
