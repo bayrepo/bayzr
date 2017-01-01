@@ -328,9 +328,9 @@ func (this *CiExec) Run(id int, conf string) error {
 [database]
 connecturl=%s
 	`, this.config))
-	err = ioutil.WriteFile("bzr.conf", sona_config, 0644)
+	err = ioutil.WriteFile("/home/checker/bzr.conf", sona_config, 0644)
 
-	err = this.Exc([]string{"/usr/bin/cat", "bzr.conf"})
+	err = this.Exc([]string{"/usr/bin/cat", "/home/checker/bzr.conf"})
 	if err != nil {
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
@@ -443,20 +443,20 @@ connecturl=%s
 			sona_config_s = sona_config_s + "\nsonar.inclusions=12345678900987654321.txt\n"
 		}
 
-		err = ioutil.WriteFile("sonar-project.properties", []byte(sona_config_s), 0644)
+		err = ioutil.WriteFile("/home/checker/sonar-project.properties", []byte(sona_config_s), 0644)
 
 		if err != nil {
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
 
-		err = this.Exc([]string{"/usr/bin/cat", "sonar-project.properties"})
+		err = this.Exc([]string{"/usr/bin/cat", "/home/checker/sonar-project.properties"})
 		if err != nil {
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
 
-		err = this.Exc([]string{"/usr/local/sonar-scanner/bin/sonar-scanner"})
+		err = this.Exc([]string{"/usr/local/sonar-scanner/bin/sonar-scanner", "-Dproject.settings=/home/checker/sonar-project.properties"})
 		if err != nil {
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
