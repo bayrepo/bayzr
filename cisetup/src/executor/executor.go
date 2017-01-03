@@ -428,11 +428,11 @@ connecturl=%s
 			}
 		}
 
-		s_err, s_lst := this.con.GetListOfFilesWitherr(this.build_id)
-		if s_err != nil {
-			this.MakeFakeOuptut("Error: " + err.Error())
-			return err
-		}
+		//s_err, s_lst := this.con.GetListOfFilesWitherr(this.build_id)
+		//if s_err != nil {
+		//	this.MakeFakeOuptut("Error: " + s_err.Error())
+		//	return s_err
+		//}
 
 		sona_config_s := fmt.Sprintf("sonar.projectKey=%s:%s\nsonar.projectName=%s\nsonar.projectVersion=%s\nsonar.sources=.\nsonar.sourceEncoding=UTF-8\n",
 			task_keys[0], task_keys[1], task_keys[0], task_keys[2])
