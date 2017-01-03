@@ -1,3 +1,6 @@
+* Nue Jan 03 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-7
+- Remove sonar inclusion property
+
 * Sun Jan 01 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-6
 - Bunch of fixes
 

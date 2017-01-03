@@ -437,11 +437,11 @@ connecturl=%s
 		sona_config_s := fmt.Sprintf("sonar.projectKey=%s:%s\nsonar.projectName=%s\nsonar.projectVersion=%s\nsonar.sources=.\nsonar.sourceEncoding=UTF-8\n",
 			task_keys[0], task_keys[1], task_keys[0], task_keys[2])
 
-		if len(s_lst) > 0 {
-			sona_config_s = sona_config_s + "\nsonar.inclusions=" + strings.Join(s_lst, ",") + "\n"
-		} else {
-			sona_config_s = sona_config_s + "\nsonar.inclusions=12345678900987654321.txt\n"
-		}
+		//if len(s_lst) > 0 {
+		//	sona_config_s = sona_config_s + "\nsonar.inclusions=" + strings.Join(s_lst, ",") + "\n"
+		//} else {
+		//	sona_config_s = sona_config_s + "\nsonar.inclusions=12345678900987654321.txt\n"
+		//}
 
 		err = ioutil.WriteFile("/home/checker/sonar-project.properties", []byte(sona_config_s), 0644)
 
