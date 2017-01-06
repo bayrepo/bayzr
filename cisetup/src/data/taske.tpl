@@ -198,6 +198,10 @@
 							<label for="TaskPost">Команды выполняемые после аналитики(записываются  в скрипт). 1 - параметр число найденных ошибок, 2 - путь к файлу отчета, 3 - вывод команд</label>
 							<textarea class="form-control" rows="6" id="TaskPost" name="TaskPost">{{.TaskPost}}</textarea>
 						</div>
+						<div class="form-group">
+							<label for="TaskDir">Рабочий каталог в проекте</label>
+							<input type="text" class="form-control input-sm" id="TaskDir" name="TaskDir" value="{{.TaskDir}}" />
+						</div>
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>
 				</div>

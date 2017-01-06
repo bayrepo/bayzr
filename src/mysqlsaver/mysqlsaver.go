@@ -254,6 +254,7 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		        branch VARCHAR(255) DEFAULT "",
 		        diff VARCHAR(1) DEFAULT "n",
 		        post_analytics_cmd TEXT,
+		        dir_to_execute VARCHAR(512) DEFAULT "",
 		        PRIMARY KEY (id),
                 INDEX TASK_name_I (name(20)),
                 INDEX TASK_task_type_I (task_type),
@@ -889,7 +890,8 @@ func (this *MySQLSaver) GetPackages() (error, []string) {
 }
 
 func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git string, new_pkgs []string,
-	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int, repname string, brn string, diff string, post_cmd []string) (error, int) {
+	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int, repname string, brn string,
+	diff string, post_cmd []string, dir_to_execute string) (error, int) {
 	var id int64 = 0
 	if this.ok == 1 {
 		task_type := Ttype
@@ -922,10 +924,10 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 		per_type := Ptype
 		res, err2 := this.db.Exec(`INSERT INTO bayzr_TASK(name, task_type, source, pkgs_list,
 										build_cmds, period, start_time, user_id, check_config,
-										users_list, auth_tocken, use_branch, result_file, branch, diff, post_analytics_cmd) 
-                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, string(task_type), git, pkgs_list,
+										users_list, auth_tocken, use_branch, result_file, branch, diff, post_analytics_cmd, dir_to_execute) 
+                                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, name, string(task_type), git, pkgs_list,
 			strings.Join(cmds, "\n"), string(per_type), string(period), owner_id,
-			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken(), use_branch, repname, brn, diff, strings.Join(post_cmd, "\n"))
+			strings.Join(cfg, "\n"), strings.Join(users, ","), randToken(), use_branch, repname, brn, diff, strings.Join(post_cmd, "\n"), dir_to_execute)
 		if err2 != nil {
 			return err2, 0
 		}
@@ -943,7 +945,8 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 }
 
 func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype string, git string, new_pkgs []string,
-	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int, repname string, brn string, diff string, post_cmd []string) error {
+	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int, repname string,
+	brn string, diff string, post_cmd []string, dir_to_execute string) error {
 	if this.ok == 1 {
 		task_type := Ttype[0]
 		pkgs_list := ""
@@ -975,9 +978,9 @@ func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype stri
 		per_type := Ptype[0]
 		_, err2 := this.db.Exec(`UPDATE bayzr_TASK SET name = ?, task_type = ?, source = ?, pkgs_list = ?,
 										build_cmds = ?, period = ?, start_time = ?, check_config = ?,
-										users_list = ?, use_branch = ?, result_file = ?, branch = ?, diff = ?, post_analytics_cmd = ? WHERE id = ?`, name, string(task_type), git, pkgs_list,
+										users_list = ?, use_branch = ?, result_file = ?, branch = ?, diff = ?, post_analytics_cmd = ?, dir_to_execute = ? WHERE id = ?`, name, string(task_type), git, pkgs_list,
 			strings.Join(cmds, "\n"), string(per_type), string(period),
-			strings.Join(cfg, "\n"), strings.Join(users, ","), use_branch, repname, brn, diff, strings.Join(post_cmd, "\n"), id)
+			strings.Join(cfg, "\n"), strings.Join(users, ","), use_branch, repname, brn, diff, strings.Join(post_cmd, "\n"), dir_to_execute, id)
 		if err2 != nil {
 			return err2
 		}
@@ -1035,7 +1038,7 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 
 	stmtOut, err := this.db.Prepare(`select t1.id, t1.name, t1.task_type, t1.source, t1.pkgs_list,
 	t1.build_cmds, t1.period, t1.start_time, t2.name, t1.check_config, t1.users_list,
-	t1.auth_tocken, t1.use_branch, t1.result_file, t1.branch, t1.diff, t1.post_analytics_cmd from bayzr_TASK as t1 
+	t1.auth_tocken, t1.use_branch, t1.result_file, t1.branch, t1.diff, t1.post_analytics_cmd, t1.dir_to_execute from bayzr_TASK as t1 
 	join bayzr_USER as t2 on t1.user_id = t2.id where t1.id = ?`)
 	if err != nil {
 		return err, []string{}
@@ -1060,11 +1063,13 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 		t1_branch             string
 		t1_diff               string
 		t1_post_analytics_cmd string
+		t1_dir_to_execute     string
 	)
 
 	err = stmtOut.QueryRow(id).Scan(&t1_id, &t1_name, &t1_task_type, &t1_source, &t1_pkgs_list,
 		&t1_build_cmds, &t1_period, &t1_start_time, &t2_name, &t1_check_config, &t1_users_list,
-		&t1_auth_tocken, &t1_use_branch, &t1_result_file, &t1_branch, &t1_diff, &t1_post_analytics_cmd)
+		&t1_auth_tocken, &t1_use_branch, &t1_result_file, &t1_branch, &t1_diff, &t1_post_analytics_cmd,
+		&t1_dir_to_execute)
 	if err != nil && err != sql.ErrNoRows {
 		return err, []string{}
 	}
@@ -1073,7 +1078,7 @@ func (this *MySQLSaver) GetTask(id int) (error, []string) {
 	} else {
 		return nil, []string{fmt.Sprintf("%d", t1_id), t1_name, t1_task_type, t1_source, t1_pkgs_list,
 			t1_build_cmds, t1_period, t1_start_time, t2_name, t1_check_config, t1_users_list,
-			t1_auth_tocken, t1_use_branch, t1_result_file, t1_branch, t1_diff, t1_post_analytics_cmd}
+			t1_auth_tocken, t1_use_branch, t1_result_file, t1_branch, t1_diff, t1_post_analytics_cmd, t1_dir_to_execute}
 	}
 
 }
@@ -1233,7 +1238,7 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 
 		stmtOut, err := this.db.Prepare(`select t1.id, t1.user_id, t2.login, t2.name, t1.job_name, 
 			t1.commit, t3.name, t3.task_type, t3.source, t3.pkgs_list, t3.build_cmds, t3.check_config, 
-			t3.result_file, t3.use_branch, t3.diff, t3.post_analytics_cmd from bayzr_JOBS as t1 join bayzr_USER as t2 on t2.id = t1.user_id 
+			t3.result_file, t3.use_branch, t3.diff, t3.post_analytics_cmd, t3.dir_to_execute from bayzr_JOBS as t1 join bayzr_USER as t2 on t2.id = t1.user_id 
 			join bayzr_TASK as t3 on t3.id = t1.task_id where t1.id = ?`)
 		if err != nil {
 			return err, map[string]string{}
@@ -1257,11 +1262,12 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 			t3_use_branch         string
 			t3_diff               string
 			t3_post_analytics_cmd string
+			t3_dir_to_execute     string
 		)
 
 		err = stmtOut.QueryRow(id).Scan(&t1_id, &t1_user_id, &t2_login, &t2_name, &t1_job_name,
 			&t1_commit, &t3_name, &t3_task_type, &t3_source, &t3_pkgs_list, &t3_build_cmds, &t3_check_config,
-			&t3_result_file, &t3_use_branch, &t3_diff, &t3_post_analytics_cmd)
+			&t3_result_file, &t3_use_branch, &t3_diff, &t3_post_analytics_cmd, &t3_dir_to_execute)
 		if err != nil && err != sql.ErrNoRows {
 			return err, map[string]string{}
 		}
@@ -1269,22 +1275,23 @@ func (this *MySQLSaver) GetTaskFullInfo(id int) (error, map[string]string) {
 			return fmt.Errorf("Empty job"), map[string]string{}
 		} else {
 			res := map[string]string{
-				"id":          t1_id,
-				"user_id":     t1_user_id,
-				"login":       t2_login,
-				"name":        t2_name,
-				"job_name":    t1_job_name,
-				"commit":      t1_commit,
-				"task_name":   t3_name,
-				"task_type":   t3_task_type,
-				"source":      t3_source,
-				"pkgs":        t3_pkgs_list,
-				"cmds":        t3_build_cmds,
-				"config":      t3_check_config,
-				"result_file": t3_result_file,
-				"use_branch":  t3_use_branch,
-				"diff":        t3_diff,
-				"post":        t3_post_analytics_cmd,
+				"id":             t1_id,
+				"user_id":        t1_user_id,
+				"login":          t2_login,
+				"name":           t2_name,
+				"job_name":       t1_job_name,
+				"commit":         t1_commit,
+				"task_name":      t3_name,
+				"task_type":      t3_task_type,
+				"source":         t3_source,
+				"pkgs":           t3_pkgs_list,
+				"cmds":           t3_build_cmds,
+				"config":         t3_check_config,
+				"result_file":    t3_result_file,
+				"use_branch":     t3_use_branch,
+				"diff":           t3_diff,
+				"post":           t3_post_analytics_cmd,
+				"dir_to_execute": t3_dir_to_execute,
 			}
 			return nil, res
 		}

@@ -434,7 +434,16 @@ connecturl=%s
 		//	return s_err
 		//}
 
-		sona_config_s := fmt.Sprintf("sonar.projectKey=%s:%s\nsonar.projectName=%s\nsonar.projectVersion=%s\nsonar.sources=.\nsonar.sourceEncoding=UTF-8\n",
+		if taskInfo["dir_to_execute"] != "" {
+			err = os.Chdir(taskInfo["dir_to_execute"])
+			this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to " + taskInfo["dir_to_execute"]))
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+		}
+
+		sona_config_s := fmt.Sprintf("sonar.projectKey=%s:%s\nsonar.projectName=%s\nsonar.projectVersion=%s\nsonar.sources=.\nsonar.sourceEncoding=UTF-8\nsonar.import_unknown_files=true\n",
 			task_keys[0], task_keys[1], task_keys[0], task_keys[2])
 
 		//if len(s_lst) > 0 {
@@ -460,6 +469,15 @@ connecturl=%s
 		if err != nil {
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
+		}
+	} else {
+		if taskInfo["dir_to_execute"] != "" {
+			err = os.Chdir(taskInfo["dir_to_execute"])
+			this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to " + taskInfo["dir_to_execute"]))
+			if err != nil {
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
 		}
 	}
 
