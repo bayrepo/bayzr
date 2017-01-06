@@ -24,7 +24,7 @@ public class BayzrProperties {
       PropertyDefinition.builder(SUFFIXES_KEY)
         .name("List of checked files")
         .description("List of checked files")
-        .defaultValue("*")
+        .defaultValue("*,")
         .category(CATEGORY)
         .build(),
       PropertyDefinition.builder(DBUS_KEY)

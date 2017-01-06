@@ -83,7 +83,11 @@ public final class BayzrRulesDefinition implements RulesDefinition {
   }
 
   public static String getRepositoryKeyForLanguage(String languageKey) {
-    return languageKey.toLowerCase(Locale.ENGLISH) + "-" + KEY;
+    if (languageKey != null) {
+       return languageKey.toLowerCase(Locale.ENGLISH) + "-" + KEY;
+    } else {
+       return "cpp" + "-" + KEY;
+    }
   }
 
   public static String getRepositoryNameForLanguage(String languageKey) {

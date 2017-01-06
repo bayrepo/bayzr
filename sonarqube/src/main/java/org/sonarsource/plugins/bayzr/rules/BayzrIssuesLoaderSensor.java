@@ -118,6 +118,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
 				String user = getReportUser();
 				String pass = getReportPass();
 				String last_id = getReportLastId();
+				LOGGER.info("LastID option " + last_id);
 				parseAndSaveResults(url, user, pass, last_id);
 			} catch (XMLStreamException e) {
 				throw new IllegalStateException("Unable to parse the provided BayZR info", e);
@@ -143,7 +144,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
 				.inputFile(fileSystem.predicates().and(fileSystem.predicates().hasRelativePath(error.getFilePath()),
 						fileSystem.predicates().hasType(InputFile.Type.MAIN)));
 
-		// LOGGER.info("inputFile null ? " + inputFile);
+		//LOGGER.info("inputFile null ? " + inputFile);
 
 		if (inputFile != null) {
 			saveIssue(inputFile, error.getLine(), error.getType(), error.getDescription());
@@ -164,7 +165,7 @@ public class BayzrIssuesLoaderSensor implements Sensor {
 		}
 		newIssue.at(primaryLocation);
 
-		// LOGGER.info("Issue " + newIssue);
+		//LOGGER.info("Issue " + newIssue);
 		newIssue.save();
 	}
 
