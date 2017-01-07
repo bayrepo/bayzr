@@ -100,9 +100,9 @@
 {{range .PageNmbrs}}
 {{$name := .}}			
 {{if eq $name $mn}}	
-                    <li>{{.}}</li>
+                    <li><a href="#">{{.}}</a></li>
 {{else}}
-                    <li><a href="/jobs/{{.}}">{{.}}</a></li>
+                    <li><a href="/jobs/?page={{.}}">{{.}}</a></li>
 {{end}}
 {{end}}
 				</ul>

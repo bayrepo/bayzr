@@ -1123,9 +1123,10 @@ func (this *MySQLSaver) GetJobs(page int) (error, [][]string, int) {
 	if page < 0 {
 	    page = 0
 	}
+	page = page * 20
 	stmtOut, err := this.db.Prepare(`select t1.id, t1.job_name, t1.commit, ifnull(t1.build_date_start,""), ifnull(t1.build_date_end,""),
 	ifnull(t1.build_id,0), t1.priority, t2.name, t3.name, t1.descr from bayzr_JOBS as t1 
-	join bayzr_USER as t2 on t1.user_id = t2.id join bayzr_TASK as t3 on t3.id = t1.task_id order by t1.id limit 20 offset ? desc`)
+	join bayzr_USER as t2 on t1.user_id = t2.id join bayzr_TASK as t3 on t3.id = t1.task_id order by t1.id desc limit 20 offset ?`)
 	if err != nil {
 		return err, result, 1
 	}
@@ -1174,7 +1175,7 @@ func (this *MySQLSaver) GetJobs(page int) (error, [][]string, int) {
 		return nil, result, 1
 	} 
 	
-	count_res := count / 20 + 1
+	count_res := count / 20
 	
 	if count % 20 > 0 {
 	    count_res += 1

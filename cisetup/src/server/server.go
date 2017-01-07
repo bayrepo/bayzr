@@ -225,8 +225,8 @@ func (this *CiServer) Run(port int, conf string) error {
 
 	router.GET("/taskdel/:tid", this.taskdel)
 
-	router.GET("/procs/*page", this.jobs)
-	router.GET("/jobs/*page", this.jobs)
+	router.GET("/procs", this.jobs)
+	router.GET("/jobs", this.jobs)
 
 	router.GET("/procs/add", this.newjob)
 	router.POST("/procs/add", this.newjob_post)
@@ -1395,10 +1395,10 @@ func (this *CiServer) jobs(c *gin.Context) {
 		return
 	}
 
-	page := c.Param("page")
+	page := c.DefaultQuery("page", "1")
 	page_number, err := strconv.Atoi(page)
 	if err != nil {
-		page_number = 0
+		page_number = 1
 	}
 
 	var con mysqlsaver.MySQLSaver
