@@ -225,8 +225,8 @@ func (this *CiServer) Run(port int, conf string) error {
 
 	router.GET("/taskdel/:tid", this.taskdel)
 
-	router.GET("/procs", this.jobs)
-	router.GET("/jobs", this.jobs)
+	router.GET("/procs/*page", this.jobs)
+	router.GET("/jobs/*page", this.jobs)
 
 	router.GET("/procs/add", this.newjob)
 	router.POST("/procs/add", this.newjob_post)
@@ -1394,6 +1394,13 @@ func (this *CiServer) jobs(c *gin.Context) {
 		this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
 		return
 	}
+
+	page := c.Param("page")
+	page_number, err := strconv.Atoi(page)
+	if err != nil {
+		page_number = 0
+	}
+
 	var con mysqlsaver.MySQLSaver
 	dbErr := con.Init(this.config, nil)
 	if dbErr != nil {
@@ -1404,11 +1411,17 @@ func (this *CiServer) jobs(c *gin.Context) {
 
 	hdr["Jobs"] = []string{}
 
-	if err, lst := con.GetJobs(); err != nil {
+	if err, lst, pg := con.GetJobs(page_number); err != nil {
 		this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
 		return
 	} else {
 		hdr["Jobs"] = lst
+		hdr["Page"] = page_number
+		page_numbers := []int{}
+		for i := 1; i <= pg; i++ {
+			page_numbers = append(page_numbers, i)
+		}
+		hdr["PageNmbrs"] = page_numbers
 	}
 
 	hdr["User"] = session.Get("login").(string)

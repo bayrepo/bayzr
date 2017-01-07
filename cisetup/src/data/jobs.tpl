@@ -94,6 +94,18 @@
 					</tr>
 {{end}}
 				</table>
+				
+				<ul class="pagination">
+{{$mn := .Page}}
+{{range .PageNmbrs}}
+{{$name := .}}			
+{{if eq $name $mn}}	
+                    <li>{{.}}</li>
+{{else}}
+                    <li><a href="/jobs/{{.}}">{{.}}</a></li>
+{{end}}
+{{end}}
+				</ul>
 		</div>	
 		<div class="panel-footer">Утилита управления заданиями анализатора кода BayZR &copy; Alexey Berezhok</div>
 

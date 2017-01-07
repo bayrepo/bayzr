@@ -1117,18 +1117,22 @@ func (this *MySQLSaver) InsertJob(owner_id int, name string, commit string, prio
 	return nil, int(id)
 }
 
-func (this *MySQLSaver) GetJobs() (error, [][]string) {
+func (this *MySQLSaver) GetJobs(page int) (error, [][]string, int) {
 	result := [][]string{}
+	page = page - 1
+	if page < 0 {
+	    page = 0
+	}
 	stmtOut, err := this.db.Prepare(`select t1.id, t1.job_name, t1.commit, ifnull(t1.build_date_start,""), ifnull(t1.build_date_end,""),
 	ifnull(t1.build_id,0), t1.priority, t2.name, t3.name, t1.descr from bayzr_JOBS as t1 
-	join bayzr_USER as t2 on t1.user_id = t2.id join bayzr_TASK as t3 on t3.id = t1.task_id order by t1.id desc`)
+	join bayzr_USER as t2 on t1.user_id = t2.id join bayzr_TASK as t3 on t3.id = t1.task_id order by t1.id limit 20 offset ? desc`)
 	if err != nil {
-		return err, result
+		return err, result, 1
 	}
 	defer stmtOut.Close()
-	rows, err := stmtOut.Query()
+	rows, err := stmtOut.Query(page)
 	if err != nil && err != sql.ErrNoRows {
-		return err, result
+		return err, result, 1
 	}
 	for rows.Next() {
 		var (
@@ -1145,12 +1149,38 @@ func (this *MySQLSaver) GetJobs() (error, [][]string) {
 		)
 		if err := rows.Scan(&t1_id, &t1_job_name, &t1_commit, &t1_build_date_start, &t1_build_date_end,
 			&t1_build_id, &t1_priority, &t2_user_name, &t3_task_name, &t1_descr); err != nil {
-			return err, [][]string{}
+			return err, [][]string{}, 1
 		}
 		result = append(result, []string{fmt.Sprintf("%d", t1_id), t1_job_name, t1_commit, t1_build_date_start, t1_build_date_end,
 			t1_build_id, t1_priority, t2_user_name, t3_task_name, t1_descr})
 	}
-	return err, result
+	
+	
+	stmtOut, err = this.db.Prepare(`select count(*) from bayzr_JOBS as t1 
+	join bayzr_USER as t2 on t1.user_id = t2.id join bayzr_TASK as t3 on t3.id = t1.task_id`)
+	if err != nil {
+		return err, result, 1
+	}
+
+	var (
+		count int
+	)
+
+	err = stmtOut.QueryRow().Scan(&count)
+	if err != nil && err != sql.ErrNoRows {
+		return err, result, 1
+	}
+	if err == sql.ErrNoRows {
+		return nil, result, 1
+	} 
+	
+	count_res := count / 20 + 1
+	
+	if count % 20 > 0 {
+	    count_res += 1
+	}
+	
+	return err, result, count_res
 }
 
 func (this *MySQLSaver) GetJob(id int) (error, [][]string) {
