@@ -67,9 +67,6 @@
 						<th>#</th>
 						<th>Название</th>
 						<th>Тип</th>
-						<th>Хранилище</th>
-						<th>Пакеты</th>
-						<th>Команды</th>
 						<th>Период</th>
 						<th>Доступ</th>
 						<th>Кто создал</th>
@@ -84,11 +81,8 @@
 						{{if eq (index . 2) "1"}}SonarQube{{end}}
 						{{if eq (index . 2) "2"}}Commit Check{{end}}
 						</td>
-						<td>{{index . 3}}</td>
-						<td>{{index . 4}}</td>
-						<td>{{index . 5}}</td>
 						<td>
-						{{if eq (index . 6) "0"}}Крон{{end}}
+						{{if eq (index . 6) "0"}}Крон:{{index . 7}}{{end}}
 						{{if eq (index . 6) "5"}}Без периода{{end}}
 						</td>
 						<td>{{index . 10}}</td>

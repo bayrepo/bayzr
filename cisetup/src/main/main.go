@@ -884,18 +884,18 @@ func ShActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	err, _, _, _ = executeCommand(makeArgsFromString("wget https://github.com/koalaman/shellcheck/archive/master.zip"))
+	err, _, _, _ = executeCommand(makeArgsFromString("wget https://github.com/koalaman/shellcheck/archive/v0.4.4.zip"))
 	if err != nil {
 		return err
 	}
-	err, _, _, _ = executeCommand(makeArgsFromString("unzip master.zip"))
+	err, _, _, _ = executeCommand(makeArgsFromString("unzip v0.4.4.zip"))
 	if err != nil {
 		return err
 	}
 	
-	os.Chdir("shellcheck-master")
+	os.Chdir("shellcheck-0.4.4")
 	
-	data5, err := data.Asset("cisetup/src/data/shl.patch")
+	/*data5, err := data.Asset("cisetup/src/data/shl.patch")
 	if err != nil {
 		return err
 	}
@@ -907,7 +907,7 @@ func ShActionInstall(parent interface{}) error {
 	err, _, _, _ = executeCommand(makeArgsFromString("patch -p1 < shl.patch"))
 	if err != nil {
 		return err
-	}
+	}*/
 	
 	err, _, _, _ = executeCommand(makeArgsFromString("cabal update"))
 	if err != nil {

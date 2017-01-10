@@ -252,6 +252,7 @@ func main() {
 	fmt.Println("--------------------Process of compillation is begun-----------------------------")
 	if err = analyzer.ExcecuteComplilationProcess(cmd_mod_); err != nil {
 		fmt.Println(err)
+		os.Exit(255)
 	}
 
 	fmt.Println("--------------------Process of source analyzing is begun-----------------------------")
@@ -481,4 +482,5 @@ func main() {
 		tpl.PropogateData(report, path, config)
 	}
 	DBase.FinalizeCurrentBuild()
+	os.Exit(0)
 }

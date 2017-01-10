@@ -373,12 +373,22 @@ connecturl=%s
 		cmd_script := "#!/bin/bash\n\n"
 		for _, val := range cmds_raw {
 			cmd_macros := strings.Trim(val, " \n\t")
+			check_fnd := false
+			if strings.Contains(cmd_macros, "{{CHECK}}") {
+			   check_fnd = true 
+			}
 			cmd := strings.Replace(cmd_macros, "{{CHECK}}",
 				fmt.Sprintf("/usr/bin/bayzr -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
 				1)
 
 			if cmd != "" {
 				cmd_script = cmd_script + cmd + "\n"
+			}
+			
+			if check_fnd {
+			    cmd_script = cmd_script + "if [ $? -ne 0 ]; then\n"
+			    cmd_script = cmd_script + "exit 255\n"
+			    cmd_script = cmd_script + "fi\n"
 			}
 		}
 		err = ioutil.WriteFile("cmd_execute", []byte(cmd_script), 0755)
