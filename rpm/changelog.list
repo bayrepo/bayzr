@@ -1,3 +1,6 @@
+* Thu Jan 12 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-11
+- Added prebuild script execution
+
 * Wed Jan 11 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-10
 - Bunch of fixes
 

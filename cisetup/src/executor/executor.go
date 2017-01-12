@@ -228,6 +228,29 @@ func (this *CiExec) Run(id int, conf string) error {
 		}
 	}
 
+	pre_build_cmd_list_str := strings.Trim(taskInfo["pre_build_cmd"], " \n,")
+	if len(pre_build_cmd_list_str) > 0 {
+		pre_build_cmd_list_raw := strings.Split(pre_build_cmd_list_str, ",")
+		pre_script := "#!/bin/bash\n\n"
+		for _, val := range pre_build_cmd_list_raw {
+			cmd_macros := strings.Trim(val, " \n\t")
+			pre_script = pre_script + cmd_macros + "\n"
+		}
+		err = ioutil.WriteFile("/home/checker/pre_execute", []byte(pre_script), 0755)
+
+		err = this.Exc([]string{"/usr/bin/cat", "/home/checker/pre_execute"})
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+
+		err = this.Exc([]string{"/bin/sudo", "/home/checker/pre_execute"})
+		if err != nil {
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+	}
+
 	err = os.Mkdir("chkdir", 0755)
 	this.MakeFakeOuptut(fmt.Sprintf("+++: mkdir /home/checker/chkdir"))
 	if err != nil {
@@ -375,7 +398,7 @@ connecturl=%s
 			cmd_macros := strings.Trim(val, " \n\t")
 			check_fnd := false
 			if strings.Contains(cmd_macros, "{{CHECK}}") {
-			   check_fnd = true 
+				check_fnd = true
 			}
 			cmd := strings.Replace(cmd_macros, "{{CHECK}}",
 				fmt.Sprintf("/usr/bin/bayzr -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
@@ -384,11 +407,11 @@ connecturl=%s
 			if cmd != "" {
 				cmd_script = cmd_script + cmd + "\n"
 			}
-			
+
 			if check_fnd {
-			    cmd_script = cmd_script + "if [ $? -ne 0 ]; then\n"
-			    cmd_script = cmd_script + "exit 255\n"
-			    cmd_script = cmd_script + "fi\n"
+				cmd_script = cmd_script + "if [ $? -ne 0 ]; then\n"
+				cmd_script = cmd_script + "exit 255\n"
+				cmd_script = cmd_script + "fi\n"
 			}
 		}
 		err = ioutil.WriteFile("cmd_execute", []byte(cmd_script), 0755)

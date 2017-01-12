@@ -199,6 +199,10 @@
 							<label for="TaskDir">Рабочий каталог в проекте</label>
 							<input type="text" class="form-control input-sm" id="TaskDir" name="TaskDir" value="{{.TaskDir}}" />
 						</div>
+						<div class="form-group">
+							<label for="TaskPreBuild">Команды выполняемые перед аналитикой от root</label>
+							<textarea class="form-control" rows="6" id="TaskPreBuild" name="TaskPreBuild">{{.TaskPreBuild}}</textarea>
+						</div>
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>
 				</div>
