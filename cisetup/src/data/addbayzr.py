@@ -38,7 +38,7 @@ if uid != os.getuid():
     createUser(out_user, uid, gid)
 
     with open("/etc/sudoers", "a") as myfile:
-        myfile.write("%s ALL = NOPASSWD : /usr/bin/yum, /usr/bin/rpm\n" % out_user)
+        myfile.write("%s ALL = NOPASSWD : /usr/bin/yum, /usr/bin/rpm, /home/checker/pre_execute\n" % out_user)
 
     os.fchdir(real_root)
     os.chroot(".")
