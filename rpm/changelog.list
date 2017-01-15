@@ -1,3 +1,9 @@
+* Mon Jan 16 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-14
+- Fixed removing empty builds
+
+* Mon Jan 16 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-13
+- Added cleaning of database
+
 * Fri Jan 13 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-12
 - Added python rules for SonarQube
 

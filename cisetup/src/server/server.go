@@ -63,6 +63,7 @@ func (this *CiServer) readConfig(ini_file string) error {
 		return fmt.Errorf("Can't read MySQL connect parameters")
 	}
 	this.config = config_tmp
+
 	return nil
 }
 
@@ -124,6 +125,11 @@ func (this *CiServer) LoadTemplates() (multitemplate.Render, error) {
 	}
 	templates.AddFromString("out", string(html_resource))
 	templates.AddFromString("result", "{{.Cont}}")
+	html_resource, err = data.Asset("cisetup/src/data/info.tpl")
+	if err != nil {
+		return templates, err
+	}
+	templates.AddFromString("info", string(html_resource))
 	return templates, nil
 }
 
@@ -200,6 +206,8 @@ func (this *CiServer) Run(port int, conf string) error {
 
 	router.GET("/", this.root)
 	router.POST("/", this.root)
+	
+	router.GET("/info", this.info)
 
 	router.GET("/welcome", this.welcome)
 	router.POST("/welcome", this.welcome)
@@ -291,7 +299,7 @@ func (this *CiServer) root(c *gin.Context) {
 					session.Set("id", id)
 					session.Set("perms", perms)
 					session.Save()
-					c.Redirect(http.StatusSeeOther, "/welcome/")
+					c.Redirect(http.StatusSeeOther, "/info/")
 					return
 				} else {
 					c.HTML(200, "login", gin.H{"FormUser": form.User,
@@ -303,7 +311,7 @@ func (this *CiServer) root(c *gin.Context) {
 		c.HTML(200, "login", gin.H{"ErrMSG": ""})
 		return
 	}
-	c.Redirect(http.StatusSeeOther, "/welcome/")
+	c.Redirect(http.StatusSeeOther, "/info/")
 }
 
 type ProfileForm struct {
@@ -777,7 +785,7 @@ type TaskForm struct {
 	TaskDiff       string   `form:"TaskDiff"`
 	TaskPost       []string `form:"TaskPost"`
 	TaskDir        string   `form:"TaskDir"`
-	TaskPreBuild   []string `form:"TaskPreBuild"`  
+	TaskPreBuild   []string `form:"TaskPreBuild"`
 }
 
 func (this *CiServer) tasks(c *gin.Context) {
@@ -1001,7 +1009,7 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"].(string))
 			if err, _ := con.SaveTask(sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
-				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn, form.TaskDiff, 
+				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn, form.TaskDiff,
 				form.TaskPost, form.TaskDir, form.TaskPreBuild); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
@@ -1015,6 +1023,24 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 	hdr["User"] = session.Get("login").(string)
 
 	c.HTML(200, "task", hdr)
+}
+
+func (this *CiServer) info(c *gin.Context) {
+	session := sessions.Default(c)
+	sess_id := session.Get("id")
+	if sess_id == nil {
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+	hdr := gin.H{}
+	if err := this.usePerms(session, []string{"ru_admin", "ru_task", "ru_result", "ru_norules"}, &hdr); err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
+		return
+	}
+
+	hdr["User"] = session.Get("login").(string)
+
+	c.HTML(200, "info", hdr)
 }
 
 func (this *CiServer) tasks_all(c *gin.Context) {
@@ -1340,7 +1366,7 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"].(string))
 			if err := con.UpdateTask(tid_number, sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
-				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn, form.TaskDiff, form.TaskPost, 
+				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn, form.TaskDiff, form.TaskPost,
 				form.TaskDir, form.TaskPreBuild); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return

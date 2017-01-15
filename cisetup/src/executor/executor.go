@@ -21,11 +21,12 @@ const (
 )
 
 type CiExec struct {
-	ci_id    int
-	config   string
-	con      mysqlsaver.MySQLSaver
-	build_id string
-	sIp      string
+	ci_id           int
+	config          string
+	con             mysqlsaver.MySQLSaver
+	build_id        string
+	sIp             string
+	days_for_delete int
 }
 
 func (this *CiExec) IsDirectory(path string) (bool, error) {
@@ -53,6 +54,16 @@ func (this *CiExec) readConfig(ini_file string) error {
 		this.sIp = "xx.xx.xx.xx:yyyy"
 	} else {
 		this.sIp = config_tmp
+	}
+
+	this.days_for_delete = 30
+
+	days_tmp, ok := config_data.Get("mysql", "clean")
+	if ok {
+		days_tmp_i, err_i := strconv.Atoi(days_tmp)
+		if err_i == nil {
+			this.days_for_delete = days_tmp_i
+		}
 	}
 
 	return nil
@@ -142,10 +153,30 @@ func (this *CiExec) Run(id int, conf string) error {
 		log.Printf("Task runner got error %s", err.Error())
 		return err
 	}
+
+	if taskInfo["task_id"] == "-1" {
+		dEr, oV, rV, eV, bV, jV, eR, eE, eB := this.con.CleanMySQL(this.days_for_delete)
+		if dEr != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
+			this.MakeFakeOuptut("Error: " + dEr.Error())
+			return dEr
+		}
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of OUTPUTS items deleted %d", oV))
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of REPORTS items deleted %d", rV))
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of ERRORS items deleted %d", eV))
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of BUILDS items deleted %d", bV))
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of JOBS items deleted %d", jV))
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of empty REPORTS items deleted %d", eR))
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of empty ERRORS items deleted %d", eE))
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of empty BUILDS items deleted %d", eB))
+		return nil
+	}
+
 	this.build_id = taskInfo["task_name"] + "." + taskInfo["id"]
 
 	err = this.Exc([]string{"/usr/bin/sudo", "/usr/sbin/yumbootstrap", "--verbose", "centos-7-mod", fmt.Sprintf("%scentos-7-mod.%d", chroot_path, id)})
 	if err != nil {
+		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
@@ -160,6 +191,7 @@ func (this *CiExec) Run(id int, conf string) error {
 
 	/*err = this.Exc([]string{"/usr/sbin/chroot", fmt.Sprintf("%scentos-7-mod.%d", chroot_path, id), "/bin/env", "-i", "HOME=/home/checker", "TERM=\"$TERM\"", "PS1='\\u:\\w\\$ '", "PATH=/bin:/usr/bin:/sbin:/usr/sbin", "/bin/bash", "--login", "+h"})
 	if err != nil {
+	    this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
@@ -174,6 +206,7 @@ func (this *CiExec) Run(id int, conf string) error {
 
 	d, err1 := syscall.Open("/", syscall.O_RDONLY, 0)
 	if err1 != nil {
+		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err1.Error())
 		return err1
 	}
@@ -183,6 +216,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	err = syscall.Chroot(dir)
 	this.MakeFakeOuptut(fmt.Sprintf("+++: chroot %s", dir))
 	if err != nil {
+		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
@@ -204,6 +238,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	err = os.Chdir("/home/checker")
 	this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to /home/checker"))
 	if err != nil {
+		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
@@ -222,6 +257,7 @@ func (this *CiExec) Run(id int, conf string) error {
 			cmds := append([]string{"/bin/sudo", "/usr/bin/yum", "-y", "--nogpgcheck", "install"}, packages_list...)
 			err = this.Exc(cmds)
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
@@ -240,12 +276,14 @@ func (this *CiExec) Run(id int, conf string) error {
 
 		err = this.Exc([]string{"/usr/bin/cat", "/home/checker/pre_execute"})
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
 
 		err = this.Exc([]string{"/bin/sudo", "/home/checker/pre_execute"})
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
@@ -254,6 +292,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	err = os.Mkdir("chkdir", 0755)
 	this.MakeFakeOuptut(fmt.Sprintf("+++: mkdir /home/checker/chkdir"))
 	if err != nil {
+		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
@@ -261,6 +300,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	err = os.Chdir("/home/checker/chkdir")
 	this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to /home/checker"))
 	if err != nil {
+		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
@@ -292,6 +332,7 @@ func (this *CiExec) Run(id int, conf string) error {
 		if len(git_list) > 0 {
 			err = this.Exc(git_list)
 			if err != nil {
+			    this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
@@ -300,6 +341,7 @@ func (this *CiExec) Run(id int, conf string) error {
 				f_name := "/home/checker/chkdir/" + f.Name()
 				is_d, d_err := this.IsDirectory(f_name)
 				if d_err != nil {
+					this.con.UpdateJobState(this.ci_id, 1)
 					this.MakeFakeOuptut("Error: " + d_err.Error())
 					return err
 				}
@@ -309,6 +351,7 @@ func (this *CiExec) Run(id int, conf string) error {
 					err = os.Chdir(f_name)
 					this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to %s", f_name))
 					if err != nil {
+						this.con.UpdateJobState(this.ci_id, 1)
 						this.MakeFakeOuptut("Error: " + err.Error())
 						return err
 					}
@@ -318,12 +361,14 @@ func (this *CiExec) Run(id int, conf string) error {
 			if taskInfo["use_branch"] == "0" {
 				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(commit_last, " \n")})
 				if err != nil {
+					this.con.UpdateJobState(this.ci_id, 1)
 					this.MakeFakeOuptut("Error: " + err.Error())
 					return err
 				}
 			} else {
 				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkbranch", "remotes/origin/" + strings.Trim(commit_last, " \n")})
 				if err != nil {
+					this.con.UpdateJobState(this.ci_id, 1)
 					this.MakeFakeOuptut("Error: " + err.Error())
 					return err
 				}
@@ -343,6 +388,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	} else if len(task_keys_raw) == 1 {
 		task_keys = []string{task_keys_raw[0], task_keys_raw[0], task_keys_raw[0]}
 	} else {
+		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: project has no name")
 		return err
 	}
@@ -355,6 +401,7 @@ connecturl=%s
 
 	err = this.Exc([]string{"/usr/bin/cat", "/home/checker/bzr.conf"})
 	if err != nil {
+		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
@@ -362,6 +409,7 @@ connecturl=%s
 	if origin_catalog != "" && copy_catalog != "" {
 		err = this.Exc([]string{"/usr/bin/cp", "-Rv", origin_catalog, copy_catalog})
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
@@ -373,18 +421,21 @@ connecturl=%s
 		if commit_first == "" {
 			err = this.Exc([]string{"/usr/bin/git", "format-patch", "-1", strings.Trim(commit_last, " \n"), ">patch_f.patch"})
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
 		} else {
 			err = this.Exc([]string{"/usr/bin/git", "diff", strings.Trim(commit_first, " \n"), strings.Trim(commit_last, " \n"), ">patch_f.patch"})
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
 		}
 		err = this.Exc([]string{"/usr/bin/cat", "patch_f.patch"})
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
@@ -418,12 +469,14 @@ connecturl=%s
 
 		err = this.Exc([]string{"/usr/bin/cat", "cmd_execute"})
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
 
 		err = this.Exc([]string{"./cmd_execute"})
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
@@ -432,6 +485,7 @@ connecturl=%s
 	this.MakeFakeOuptut("+++: Save result to " + taskInfo["result_file"])
 	if _, err := os.Stat(taskInfo["result_file"]); err == nil {
 		if err := this.con.InsertExtInfoFromResult(taskInfo["result_file"], taskInfo["task_name"]+"."+taskInfo["id"]); err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
@@ -445,17 +499,20 @@ connecturl=%s
 		if origin_catalog != "" && copy_catalog != "" {
 			err = this.Exc([]string{"/usr/bin/mv", origin_catalog, copy_catalog + ".garbage"})
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
 			err = this.Exc([]string{"/usr/bin/cp", "-Rv", copy_catalog, origin_catalog})
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
 			err = os.Chdir(origin_catalog)
 			this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to " + origin_catalog))
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
@@ -463,6 +520,7 @@ connecturl=%s
 
 		//s_err, s_lst := this.con.GetListOfFilesWitherr(this.build_id)
 		//if s_err != nil {
+		//  this.con.UpdateJobState(this.ci_id, 1)
 		//	this.MakeFakeOuptut("Error: " + s_err.Error())
 		//	return s_err
 		//}
@@ -471,6 +529,7 @@ connecturl=%s
 			err = os.Chdir(taskInfo["dir_to_execute"])
 			this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to " + taskInfo["dir_to_execute"]))
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
@@ -488,18 +547,21 @@ connecturl=%s
 		err = ioutil.WriteFile("/home/checker/sonar-project.properties", []byte(sona_config_s), 0644)
 
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
 
 		err = this.Exc([]string{"/usr/bin/cat", "/home/checker/sonar-project.properties"})
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
 
 		err = this.Exc([]string{"/usr/local/sonar-scanner/bin/sonar-scanner", "-Dproject.settings=/home/checker/sonar-project.properties"})
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
@@ -508,6 +570,7 @@ connecturl=%s
 			err = os.Chdir(taskInfo["dir_to_execute"])
 			this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to " + taskInfo["dir_to_execute"]))
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
@@ -519,6 +582,7 @@ connecturl=%s
 	if len(post_cmds_raw) > 0 {
 		err, result := this.con.GetJob(this.ci_id)
 		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
 			return err
 		}
@@ -526,12 +590,14 @@ connecturl=%s
 
 			build_id, err_i := strconv.Atoi(result[0][5])
 			if err_i != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err_i.Error())
 				return err
 			}
 
 			err, nmb_errors := this.con.GetBuildErrors(build_id)
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
@@ -549,12 +615,14 @@ connecturl=%s
 
 			err = this.Exc([]string{"/usr/bin/cat", "post_execute"})
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
 
 			err = this.Exc([]string{"./post_execute", nmb_errors, url_report, url_output})
 			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}

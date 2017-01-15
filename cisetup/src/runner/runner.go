@@ -30,6 +30,7 @@ type CiRunner struct {
 	cmd             *exec.Cmd
 	ci_timers       []CiTimers
 	ci_cron         *cron.Cron
+	cleantime       string
 }
 
 func (this *CiRunner) readConfig(ini_file string) error {
@@ -57,6 +58,15 @@ func (this *CiRunner) readConfig(ini_file string) error {
 		log.Printf("Use default 30 second wait period")
 	}
 	this.ci_time = nmb
+
+	this.cleantime = "59 59 23 * * *"
+
+	time_tmp, ok := config_data.Get("mysql", "timetoclean")
+	if ok {
+
+		this.cleantime = time_tmp
+	}
+
 	return nil
 }
 
@@ -185,7 +195,7 @@ func (this *CiRunner) CronJob(task_id int, task_name string, task_commit string)
 		return
 	} else {
 		if fnd {
-			if err, _ := con.InsertJob(id, fmt.Sprintf("Autostart task %s", task_name), task_commit, "2", task_id, "Auto task"); err != nil {
+			if err, _ := con.InsertJob(id, fmt.Sprintf("Autostart task %s", task_name), task_commit, "2", task_id, fmt.Sprintf("Autostart task %s", task_name)); err != nil {
 				log.Printf("DataBase error %s\n", err.Error())
 				return
 			}
@@ -245,6 +255,7 @@ func (this *CiRunner) Run(conf string) error {
 		this.ci_cron.AddJob(val[2], CiJob{task_id_int, val[4], val[3], this})
 
 	}
+	this.ci_cron.AddJob(this.cleantime, CiJob{-1, "MYSQL CLEANER", "ALL", this})
 	this.ci_cron.Start()
 
 	ticker := time.NewTicker(time.Second * 60)

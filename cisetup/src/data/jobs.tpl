@@ -64,6 +64,7 @@
                 <a href="/job/add"><span class="glyphicon glyphicon-trash"></span>Создать новый процесс</a>
 				<table class="table table-striped">
 					<tr>
+						<th>&nbsp;</th>
 						<th>#</th>
 						<th>Кто запустил</th>
 						<th>Задача</th>
@@ -78,6 +79,11 @@
 					</tr>
 {{range .Jobs}}
                     <tr>
+{{if ne (index . 10) "0"}}
+					    <td><span class="glyphicon glyphicon-thumbs-down" aria-hidden="true"></span></td>
+{{else}}
+						<td>&nbsp;</td>
+{{end}} 
 						<td>{{index . 0}}</td>
 						<td>{{index . 7}}</td>
 						<td>{{index . 8}}</td>
