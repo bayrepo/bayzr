@@ -433,7 +433,7 @@ connecturl=%s
 	}
 
 	need_diff := ""
-	if taskInfo["diff"] == "y" {
+	if taskInfo["diff"] == "1" {
 		need_diff = "-diff patch_f.patch"
 		if commit_first == "" {
 			if taskInfo["use_branch"] == "2" {
