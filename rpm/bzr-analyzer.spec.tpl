@@ -28,14 +28,13 @@ BuildRequires: golang-bin >= 1.6.2
 #Requires: bay-gcc61 gcc gcc-c++ clang clang-analyzer cppcheck oclint rats splint frama-c pylint
 #%endif
 
-
 %description
 The tool for simplification of using some code static analyzers such as cppcheck, oclint, rats etc
 
 %if 0%{?rhel} >= 7
 %package citool
 Summary:  The tool for making SonarQube and bayzr integration
-Requires: git systemd wget unzip shadow-utils
+Requires: git systemd wget unzip shadow-utils cronie
 
 %description citool
 The tool for making SonarQube and bayzr integration
@@ -105,9 +104,13 @@ install -D -p -m 644 sonarqube/jar/bayzr-plugin-0.0.1-rel1.jar %{buildroot}%{_da
 mkdir -p $RPM_BUILD_ROOT%{_sbindir}
 mkdir -p $RPM_BUILD_ROOT/mnt/chroot/
 mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system/
+mkdir -p $RPM_BUILD_ROOT/usr/share/bzr.cron/
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/cron.d
 install -D -p -m 755 bin/citool %{buildroot}%{_sbindir}
 install -D -p -m 600 cisetup/cfg/citool.ini %{buildroot}%{_sysconfdir}
 install -D -p -m 644 cisetup/cfg/citool.service %{buildroot}/usr/lib/systemd/system/
+install -D -p -m 755 cisetup/src/data/bayzr_clean_orph_environ.sh %{buildroot}/usr/share/bzr.cron/bayzr_clean_orph_environ.sh
+install -D -p -m 644 cisetup/src/data/bayzr-citool %{buildroot}%{_sysconfdir}/cron.d/bayzr-citool
 %endif
 
 %if 0%{?rhel} >= 7
@@ -131,6 +134,8 @@ rm -rf $RPM_BUILD_ROOT
 %dir /mnt/chroot/
 %{_sbindir}/citool
 /usr/lib/systemd/system/citool.service
+/usr/share/bzr.cron/bayzr_clean_orph_environ.sh
+%config(noreplace) %{_sysconfdir}/cron.d/bayzr-citool
 %endif
 
 %files
