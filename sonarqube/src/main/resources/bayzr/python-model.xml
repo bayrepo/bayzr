@@ -6,7 +6,7 @@
      <internalKey>C1001</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -30,7 +30,7 @@
      <internalKey>C0304</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -42,7 +42,7 @@
      <internalKey>C0102</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>1min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -54,7 +54,7 @@
      <internalKey>C0103</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>1min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -66,7 +66,7 @@
      <internalKey>C0303</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>1min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -78,7 +78,7 @@
      <internalKey>C0301</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>1min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -90,7 +90,7 @@
      <internalKey>C0322</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>1min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -102,7 +102,7 @@
      <internalKey>C0323</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>1min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -114,7 +114,7 @@
      <internalKey>C0324</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>1min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -246,7 +246,7 @@
      <internalKey>C0325</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -258,7 +258,7 @@
      <internalKey>C0326</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>1min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -294,7 +294,7 @@
      <internalKey>C0111</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -306,7 +306,7 @@
      <internalKey>C0112</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -318,7 +318,7 @@
      <internalKey>C0202</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -330,7 +330,7 @@
      <internalKey>C0203</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -342,7 +342,7 @@
      <internalKey>C0302</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>30min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -354,7 +354,7 @@
      <internalKey>R0903</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>60min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -366,7 +366,7 @@
      <internalKey>R0911</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -378,7 +378,7 @@
      <internalKey>R0914</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -464,7 +464,7 @@
      <internalKey>C0204</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -476,7 +476,7 @@
      <internalKey>R0921</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -488,7 +488,7 @@
      <internalKey>R0923</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -536,7 +536,7 @@
      <internalKey>R0922</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>45min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -584,7 +584,7 @@
      <internalKey>R0901</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>180min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -680,8 +680,8 @@
      <internalKey>E0701</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>30min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -692,8 +692,8 @@
      <internalKey>E0702</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -704,8 +704,8 @@
      <internalKey>E0710</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -716,8 +716,8 @@
      <internalKey>E0711</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -800,8 +800,8 @@
      <internalKey>E0712</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -824,8 +824,8 @@
      <internalKey>E0001</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -836,8 +836,8 @@
      <internalKey>E0100</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>30min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -848,8 +848,8 @@
      <internalKey>E0101</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -860,8 +860,8 @@
      <internalKey>E0102</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -872,8 +872,8 @@
      <internalKey>E0103</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -884,8 +884,8 @@
      <internalKey>E0104</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -896,8 +896,8 @@
      <internalKey>E0105</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -908,8 +908,8 @@
      <internalKey>E0106</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -920,8 +920,8 @@
      <internalKey>E0107</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>3min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -932,8 +932,8 @@
      <internalKey>E0202</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -944,8 +944,8 @@
      <internalKey>E0203</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -956,8 +956,8 @@
      <internalKey>E0211</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -968,8 +968,8 @@
      <internalKey>E0213</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -980,8 +980,8 @@
      <internalKey>E0221</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -996,8 +996,8 @@
      <internalKey>E0501</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1008,8 +1008,8 @@
      <internalKey>E0502</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1020,8 +1020,8 @@
      <internalKey>E0503</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1032,8 +1032,8 @@
      <internalKey>E0601</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1044,8 +1044,8 @@
      <internalKey>E0602</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1056,8 +1056,8 @@
      <internalKey>E0611</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1068,8 +1068,8 @@
      <internalKey>E1001</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1081,8 +1081,8 @@
      <internalKey>E1002</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>15min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1093,8 +1093,8 @@
      <internalKey>E1003</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1105,8 +1105,8 @@
      <internalKey>E1101</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1117,8 +1117,8 @@
      <internalKey>E1102</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>3min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1129,8 +1129,8 @@
      <internalKey>E1103</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1141,8 +1141,8 @@
      <internalKey>E1111</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1153,8 +1153,8 @@
      <internalKey>E1120</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1165,8 +1165,8 @@
      <internalKey>E1121</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1177,8 +1177,8 @@
      <internalKey>E1122</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>3min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1189,8 +1189,8 @@
      <internalKey>E1123</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>3min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1201,8 +1201,8 @@
      <internalKey>E1124</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1213,8 +1213,8 @@
      <internalKey>E9900</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>3min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1225,8 +1225,8 @@
      <internalKey>E1301</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>3min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1237,8 +1237,8 @@
      <internalKey>E1302</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1249,8 +1249,8 @@
      <internalKey>E1303</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1261,8 +1261,8 @@
      <internalKey>E1304</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1273,8 +1273,8 @@
      <internalKey>E1305</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1285,8 +1285,8 @@
      <internalKey>E1306</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1345,8 +1345,8 @@
      <internalKey>E1200</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1357,8 +1357,8 @@
      <internalKey>E1201</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1369,8 +1369,8 @@
      <internalKey>E1205</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1381,8 +1381,8 @@
      <internalKey>E1206</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1393,7 +1393,7 @@
      <internalKey>C0330</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -1405,8 +1405,8 @@
      <internalKey>E0108</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>5min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1417,8 +1417,8 @@
      <internalKey>E0109</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1429,8 +1429,8 @@
      <internalKey>E0111</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1441,8 +1441,8 @@
      <internalKey>E0235</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1453,8 +1453,8 @@
      <internalKey>E0236</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1465,8 +1465,8 @@
      <internalKey>E0238</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1477,8 +1477,8 @@
      <internalKey>E1004</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1489,8 +1489,8 @@
      <internalKey>E1310</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>10min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1585,8 +1585,8 @@
      <internalKey>E0222</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>30min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1754,8 +1754,8 @@
      <internalKey>E0603</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>3min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1766,8 +1766,8 @@
      <internalKey>E0604</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>3min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
-     <type>CODE_SMELL</type>
+     <severity>MAJOR</severity>
+     <type>BUG</type>
      <tag>bayzr</tag>
      <tag>python</tag>
   </rule>
@@ -1814,7 +1814,7 @@
      <internalKey>C0121</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -1838,7 +1838,7 @@
      <internalKey>R0913</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>30min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -1852,7 +1852,7 @@
      <internalKey>R0201</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>20min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -1864,7 +1864,7 @@
      <internalKey>R0401</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>120min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -1876,7 +1876,7 @@
      <internalKey>R0902</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>120min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>
@@ -1888,7 +1888,7 @@
      <internalKey>R0904</internalKey>
      <remediationFunction>LINEAR</remediationFunction>
      <remediationFunctionGapMultiplier>120min</remediationFunctionGapMultiplier>
-     <severity>MINOR</severity>
+     <severity>INFO</severity>
      <type>CODE_SMELL</type>
      <tag>bayzr</tag>
      <tag>python</tag>

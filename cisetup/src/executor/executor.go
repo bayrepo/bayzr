@@ -155,7 +155,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	}
 
 	if taskInfo["task_id"] == "-1" {
-		dEr, oV, rV, eV, bV, jV, eR, eE, eB := this.con.CleanMySQL(this.days_for_delete)
+		dEr, oV, rV, eV, bV, jV, eR, eE, eB, eO := this.con.CleanMySQL(this.days_for_delete)
 		if dEr != nil {
 			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + dEr.Error())
@@ -169,6 +169,7 @@ func (this *CiExec) Run(id int, conf string) error {
 		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of empty REPORTS items deleted %d", eR))
 		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of empty ERRORS items deleted %d", eE))
 		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of empty BUILDS items deleted %d", eB))
+		this.MakeFakeOuptut(fmt.Sprintf("+++: Number of empty OUTPUTS items deleted %d", eO))
 		return nil
 	}
 
@@ -268,6 +269,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	if len(pre_build_cmd_list_str) > 0 {
 		pre_build_cmd_list_raw := strings.Split(pre_build_cmd_list_str, ",")
 		pre_script := "#!/bin/bash\n\n"
+		pre_script = pre_script + "export LANG=en_US.UTF-8\n"
 		for _, val := range pre_build_cmd_list_raw {
 			cmd_macros := strings.Trim(val, " \n\t")
 			pre_script = pre_script + cmd_macros + "\n"
@@ -329,10 +331,12 @@ func (this *CiExec) Run(id int, conf string) error {
 				git_list = append(git_list, item_)
 			}
 		}
+		git_project := ""
 		if len(git_list) > 0 {
+			git_project = git_list[len(git_list)-1]
 			err = this.Exc(git_list)
 			if err != nil {
-			    this.con.UpdateJobState(this.ci_id, 1)
+				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
@@ -360,6 +364,19 @@ func (this *CiExec) Run(id int, conf string) error {
 
 			if taskInfo["use_branch"] == "0" {
 				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(commit_last, " \n")})
+				if err != nil {
+					this.con.UpdateJobState(this.ci_id, 1)
+					this.MakeFakeOuptut("Error: " + err.Error())
+					return err
+				}
+			} else if taskInfo["use_branch"] == "2" && git_project != "" {
+				err = this.Exc([]string{"/usr/bin/git", "fetch", git_project, strings.Trim(commit_last, " \n")})
+				if err != nil {
+					this.con.UpdateJobState(this.ci_id, 1)
+					this.MakeFakeOuptut("Error: " + err.Error())
+					return err
+				}
+				err = this.Exc([]string{"/usr/bin/git", "checkout", "FETCH_HEAD"})
 				if err != nil {
 					this.con.UpdateJobState(this.ci_id, 1)
 					this.MakeFakeOuptut("Error: " + err.Error())
@@ -419,11 +436,20 @@ connecturl=%s
 	if taskInfo["diff"] == "y" {
 		need_diff = "-diff patch_f.patch"
 		if commit_first == "" {
-			err = this.Exc([]string{"/usr/bin/git", "format-patch", "-1", strings.Trim(commit_last, " \n"), ">patch_f.patch"})
-			if err != nil {
-				this.con.UpdateJobState(this.ci_id, 1)
-				this.MakeFakeOuptut("Error: " + err.Error())
-				return err
+			if taskInfo["use_branch"] == "2" {
+				err = this.Exc([]string{"/usr/bin/git", "diff", "HEAD^", "HEAD", ">patch_f.patch"})
+				if err != nil {
+					this.con.UpdateJobState(this.ci_id, 1)
+					this.MakeFakeOuptut("Error: " + err.Error())
+					return err
+				}
+			} else {
+				err = this.Exc([]string{"/usr/bin/git", "format-patch", "-1", strings.Trim(commit_last, " \n"), ">patch_f.patch"})
+				if err != nil {
+					this.con.UpdateJobState(this.ci_id, 1)
+					this.MakeFakeOuptut("Error: " + err.Error())
+					return err
+				}
 			}
 		} else {
 			err = this.Exc([]string{"/usr/bin/git", "diff", strings.Trim(commit_first, " \n"), strings.Trim(commit_last, " \n"), ">patch_f.patch"})
@@ -445,6 +471,7 @@ connecturl=%s
 
 	if len(cmds_raw) > 0 {
 		cmd_script := "#!/bin/bash\n\n"
+		cmd_script = cmd_script + "export LANG=en_US.UTF-8\n"
 		for _, val := range cmds_raw {
 			cmd_macros := strings.Trim(val, " \n\t")
 			check_fnd := false
@@ -606,6 +633,7 @@ connecturl=%s
 			url_output := fmt.Sprintf("%s/output/%d", this.sIp, this.ci_id)
 
 			post_script := "#!/bin/bash\n\n"
+			post_script = post_script + "export LANG=en_US.UTF-8\n"
 
 			for _, val := range post_cmds_raw {
 				cmd_macros := strings.Trim(val, " \n\t")

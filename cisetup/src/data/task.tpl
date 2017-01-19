@@ -117,6 +117,7 @@
 							<select class="form-control selectpicker" id="TaskBranch" name="TaskBranch">
 								<option value="0" {{if eq .TaskBranch "0"}}selected{{end}}>Коммит</option>
 								<option value="1" {{if eq .TaskBranch "1"}}selected{{end}}>Ветку</option>
+								<option value="2" {{if eq .TaskBranch "2"}}selected{{end}}>Патчсет</option>
 							</select>
 						</div>
 						<div class="form-group{{if .TaskGit_err}} has-error{{end}}">

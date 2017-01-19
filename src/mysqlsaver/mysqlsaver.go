@@ -1641,7 +1641,7 @@ func (this *MySQLSaver) _executeSQLCpammndWithParam(value int, cmd string) error
 	return nil
 }
 
-func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, int, int ,int) {
+func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, int, int ,int, int) {
 	var outputDel int = 0
 	var reportDel int = 0
 	var errorDel int = 0
@@ -1650,94 +1650,105 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	var emptyRep int = 0
 	var emptyErr int = 0
 	var emptyBld int = 0
+	var emptyOtp int = 0
 	var err error
 
 	err, outputDel = this._executeOneResult(days, "select count(*) from bayzr_OUTPUT where job_id in (select id from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)))")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err = this._executeSQLCpammndWithParam(days, "delete from bayzr_OUTPUT where job_id in (select id from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)))")
 	if err != nil {
-		return err, 0, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, 0, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 	
 	err, reportDel = this._executeOneResult(days, "select count(*) from bayzr_err_extend_file where build_number in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err = this._executeSQLCpammndWithParam(days, "delete from bayzr_err_extend_file where build_number in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
-		return err, outputDel, 0, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, 0, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 	
 	err, errorDel = this._executeOneResult(days, "select count(*) from bayzr_err_list where build_number in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err = this._executeSQLCpammndWithParam(days, "delete from bayzr_err_list where build_number in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
-		return err, outputDel, reportDel, 0, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, 0, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err, buildDel = this._executeOneResult(days, "select count(*) from bayzr_build_info where id in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err = this._executeSQLCpammndWithParam(days, "delete from bayzr_build_info where id in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, 0, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, 0, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}	
 	
 	err, jobDel = this._executeOneResult(days, "select count(*) from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24))")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err = this._executeSQLCpammndWithParam(days, "delete from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24))")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, 0, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, 0, emptyRep, emptyErr, emptyBld, emptyOtp
 	}	
 	
 	err, emptyErr = this._executeOneResultNoParams("select count(*) from bayzr_err_list where build_number in (select id from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null))")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err = this._executeSQLCpammnd("delete from bayzr_err_list where build_number in (select id from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null))")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, 0, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, 0, emptyBld, emptyOtp
 	}	
 	
 	err, emptyRep = this._executeOneResultNoParams("select count(*) from bayzr_err_extend_file where build_number in (select id from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null))")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err = this._executeSQLCpammnd("delete from bayzr_err_extend_file where build_number in (select id from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null))")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, 0, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, 0, emptyErr, emptyBld, emptyOtp
 	}	
 	
 	err, emptyBld = this._executeOneResultNoParams("select count(*) from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null)")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 
 	err = this._executeSQLCpammnd("delete from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null)")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, 0
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, 0, emptyOtp
+	}	
+	
+	err, emptyOtp = this._executeOneResultNoParams("select count(*) from bayzr_OUTPUT where job_id is not null and job_id not in (select id from bayzr_JOBS group by id)")
+	if err != nil {
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
+	}
+
+	err = this._executeSQLCpammnd("delete from bayzr_OUTPUT where job_id is not null and job_id not in (select id from bayzr_JOBS group by id)")
+	if err != nil {
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, 0
 	}	
 	
 	err = this._executeSQLCpammnd("OPTIMIZE TABLE bayzr_OUTPUT, bayzr_JOBS, bayzr_build_info, bayzr_err_extend_file, bayzr_err_list")
 	if err != nil {
-		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
 	
-	return nil, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld
+	return nil, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 }
 
 func (this *MySQLSaver) UpdateJobState(id int, state int) error {
