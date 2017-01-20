@@ -91,7 +91,7 @@ func (this *DiffAnalyzerContainer) ParseFilesList(in string) {
 								this.foundFilesList_LineNumber[file_found_name] = append(this.foundFilesList_LineNumber[file_found_name], configparser.DiffAnalyzerContainer_x_y{beg, beg + end})
 							}
 						} else if len(result2) == 1 {
-						    beg = 0
+							beg := int64(0)
 							end, err2 := strconv.ParseInt(strings.Trim(result2[0], " \n\t"), 10, 64)
 							if err2 != nil {
 								continue
