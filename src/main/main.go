@@ -280,7 +280,7 @@ func main() {
 					val_new_defs := map[string][]string{}
 					extaopts_for_files := map[string][]string{}
 					for file_name, value := range *analyzer.GetParsedFilesList() {
-						if config.IsFileIgnored(file_name) == false {
+						if config.IsFileOrDirIgnored(file_name) == false {
 							file_name = outputanalyzer.TransformFileName(file_name, value.Dir)
 							if file_name == "" {
 								continue
@@ -385,7 +385,7 @@ func main() {
 					}
 				} else {
 					for file_name, value := range *analyzer.GetParsedFilesList() {
-						if config.IsFileIgnored(file_name) == false {
+						if config.IsFileOrDirIgnored(file_name) == false {
 							c_f, cpp_f := gcc.MakeHeaders(obj_item.GetAutoIncludes())
 							new_incc_list := append(gcc.GetC(), c_f)
 							new_inccpp_list := append(gcc.GetCPP(), cpp_f)

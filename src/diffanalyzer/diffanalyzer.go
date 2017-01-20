@@ -78,12 +78,21 @@ func (this *DiffAnalyzerContainer) ParseFilesList(in string) {
 					result := configparser.SplitOwnLongSepNoTrimSep(new_line, []string{"\t", " "})
 					if len(result) > 2 {
 						result2 := configparser.SplitOwnLongSepNoTrimSep(result[1], []string{","})
-						if len(result) > 1 {
+						if len(result2) > 1 {
 							beg, err1 := strconv.ParseInt(strings.Trim(result2[0], " \n\t"), 10, 64)
 							if err1 != nil {
 								continue
 							}
 							end, err2 := strconv.ParseInt(strings.Trim(result2[1], " \n\t"), 10, 64)
+							if err2 != nil {
+								continue
+							}
+							if file_found_name != "" {
+								this.foundFilesList_LineNumber[file_found_name] = append(this.foundFilesList_LineNumber[file_found_name], configparser.DiffAnalyzerContainer_x_y{beg, beg + end})
+							}
+						} else if len(result2) == 1 {
+						    beg = 0
+							end, err2 := strconv.ParseInt(strings.Trim(result2[0], " \n\t"), 10, 64)
 							if err2 != nil {
 								continue
 							}

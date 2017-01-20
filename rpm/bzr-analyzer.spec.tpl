@@ -110,7 +110,7 @@ install -D -p -m 755 bin/citool %{buildroot}%{_sbindir}
 install -D -p -m 600 cisetup/cfg/citool.ini %{buildroot}%{_sysconfdir}
 install -D -p -m 644 cisetup/cfg/citool.service %{buildroot}/usr/lib/systemd/system/
 install -D -p -m 755 cisetup/src/data/bayzr_clean_orph_environ.sh %{buildroot}/usr/share/bzr.cron/bayzr_clean_orph_environ.sh
-install -D -p -m 644 cisetup/src/data/bayzr-citool %{buildroot}%{_sysconfdir}/cron.d/bayzr-citool
+install -D -p -m 644 cisetup/src/data/bayzr_citool-cron %{buildroot}%{_sysconfdir}/cron.d/bayzr_citool-cron
 %endif
 
 %if 0%{?rhel} >= 7
@@ -135,7 +135,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/citool
 /usr/lib/systemd/system/citool.service
 /usr/share/bzr.cron/bayzr_clean_orph_environ.sh
-%config(noreplace) %{_sysconfdir}/cron.d/bayzr-citool
+%config(noreplace) %{_sysconfdir}/cron.d/bayzr_citool-cron
 %endif
 
 %files

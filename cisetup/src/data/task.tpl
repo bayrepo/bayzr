@@ -188,8 +188,8 @@
 						<div class="form-group">
 							<label for="TaskDiff">Список проверяемых файлов</label>
 							<select class="form-control selectpicker" id="TaskDiff" name="TaskDiff">
-								<option value="0" {{if eq .TaskDiff "n"}}selected{{end}}>Полный список</option>
-								<option value="1" {{if eq .TaskDiff "y"}}selected{{end}}>Только измененные файлы</option>
+								<option value="0" {{if eq .TaskDiff "0"}}selected{{end}}>Полный список</option>
+								<option value="1" {{if eq .TaskDiff "1"}}selected{{end}}>Только измененные файлы</option>
 							</select>
 						</div>
 						<div class="form-group">

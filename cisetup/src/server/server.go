@@ -361,7 +361,7 @@ func (this *CiServer) welcome(c *gin.Context) {
 
 		if found_err == false {
 			var pass string
-			if form.InputPassword1 != "" {
+			if form.InputPassword1 == "" {
 				pass = ""
 			} else {
 				pass = fmt.Sprintf("%x", md5.Sum([]byte(form.InputPassword1)))

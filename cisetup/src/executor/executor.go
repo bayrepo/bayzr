@@ -323,75 +323,75 @@ func (this *CiExec) Run(id int, conf string) error {
 	origin_catalog := ""
 
 	if len(src_raw_str) > 0 {
-		src_raw_str_raw := strings.Split(src_raw_str, " ")
+		/*src_raw_str_raw := strings.Split(src_raw_str, " ")
 		git_list := []string{}
 		for _, val := range src_raw_str_raw {
 			item_ := strings.Trim(val, " \n,")
 			if item_ != "" {
 				git_list = append(git_list, item_)
 			}
+		}*/
+		git_project := src_raw_str
+		//if len(git_list) > 0 {
+		//git_project = git_list[len(git_list)-1]
+		err = this.Exc([]string{"/usr/bin/git", "clone", git_project})
+		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
 		}
-		git_project := ""
-		if len(git_list) > 0 {
-			git_project = git_list[len(git_list)-1]
-			err = this.Exc(git_list)
+		files, _ := ioutil.ReadDir("/home/checker/chkdir")
+		for _, f := range files {
+			f_name := "/home/checker/chkdir/" + f.Name()
+			is_d, d_err := this.IsDirectory(f_name)
+			if d_err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
+				this.MakeFakeOuptut("Error: " + d_err.Error())
+				return err
+			}
+			if f_name != "." && f_name != ".." && is_d == true {
+				copy_catalog = f_name + ".copy"
+				origin_catalog = f_name
+				err = os.Chdir(f_name)
+				this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to %s", f_name))
+				if err != nil {
+					this.con.UpdateJobState(this.ci_id, 1)
+					this.MakeFakeOuptut("Error: " + err.Error())
+					return err
+				}
+			}
+		}
+
+		if taskInfo["use_branch"] == "0" {
+			err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(commit_last, " \n")})
 			if err != nil {
 				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
-			files, _ := ioutil.ReadDir("/home/checker/chkdir")
-			for _, f := range files {
-				f_name := "/home/checker/chkdir/" + f.Name()
-				is_d, d_err := this.IsDirectory(f_name)
-				if d_err != nil {
-					this.con.UpdateJobState(this.ci_id, 1)
-					this.MakeFakeOuptut("Error: " + d_err.Error())
-					return err
-				}
-				if f_name != "." && f_name != ".." && is_d == true {
-					copy_catalog = f_name + ".copy"
-					origin_catalog = f_name
-					err = os.Chdir(f_name)
-					this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to %s", f_name))
-					if err != nil {
-						this.con.UpdateJobState(this.ci_id, 1)
-						this.MakeFakeOuptut("Error: " + err.Error())
-						return err
-					}
-				}
+		} else if taskInfo["use_branch"] == "2" && git_project != "" {
+			err = this.Exc([]string{"/usr/bin/git", "fetch", git_project, strings.Trim(commit_last, " \n")})
+			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
 			}
-
-			if taskInfo["use_branch"] == "0" {
-				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkcommit", strings.Trim(commit_last, " \n")})
-				if err != nil {
-					this.con.UpdateJobState(this.ci_id, 1)
-					this.MakeFakeOuptut("Error: " + err.Error())
-					return err
-				}
-			} else if taskInfo["use_branch"] == "2" && git_project != "" {
-				err = this.Exc([]string{"/usr/bin/git", "fetch", git_project, strings.Trim(commit_last, " \n")})
-				if err != nil {
-					this.con.UpdateJobState(this.ci_id, 1)
-					this.MakeFakeOuptut("Error: " + err.Error())
-					return err
-				}
-				err = this.Exc([]string{"/usr/bin/git", "checkout", "FETCH_HEAD"})
-				if err != nil {
-					this.con.UpdateJobState(this.ci_id, 1)
-					this.MakeFakeOuptut("Error: " + err.Error())
-					return err
-				}
-			} else {
-				err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkbranch", "remotes/origin/" + strings.Trim(commit_last, " \n")})
-				if err != nil {
-					this.con.UpdateJobState(this.ci_id, 1)
-					this.MakeFakeOuptut("Error: " + err.Error())
-					return err
-				}
+			err = this.Exc([]string{"/usr/bin/git", "checkout", "FETCH_HEAD"})
+			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
 			}
-
+		} else {
+			err = this.Exc([]string{"/usr/bin/git", "checkout", "-b", "checkbranch", "remotes/origin/" + strings.Trim(commit_last, " \n")})
+			if err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
 		}
+
+		//}
 	}
 
 	task_keys_str := strings.Trim(taskInfo["task_name"], " \n,")

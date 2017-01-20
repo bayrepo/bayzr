@@ -347,8 +347,8 @@ func (storage ConfigparserContainer) IsFileIgnored(name string) bool {
 
 func (storage ConfigparserContainer) IsFileOrDirIgnored(name string) bool {
 	for _, val := range storage.ignore {
-		
-		if strings.Trim(val, " \n")!="" && strings.Contains(name, val) {
+
+		if strings.Trim(val, " \n") != "" && strings.Contains(name, val) {
 			return true
 		}
 	}

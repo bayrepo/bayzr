@@ -1,6 +1,8 @@
 #!/bin/bash
 
-LOG_FILE="bayzr-env-cleaner.log"
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+LOG_FILE="/var/log/bayzr-env-cleaner.log"
 
 write_log()
 {
@@ -29,6 +31,9 @@ do
   if [ -z "$is_found" ]; then
    write_log "=====>Process /usr/sbin/citool -task=$extension -task-run not found. Clean environment $FULL_NAME"
    /usr/sbin/yumbootstrap --uninstall centos-7-mod /mnt/chroot/centos-7-mod."$extension"
+   if [ -e "/mnt/chroot/centos-7-mod.$extension" ]; then
+    rm -rf /mnt/chroot/centos-7-mod."$extension"
+   fi
   else
    write_log "Process /usr/sbin/citool -task=$extension -task-run found"
   fi
