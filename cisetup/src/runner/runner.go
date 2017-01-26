@@ -5,7 +5,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/robfig/cron"
 	"github.com/vaughan0/go-ini"
-	"log"
 	"mysqlsaver"
 	"os"
 	"os/exec"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+	"logger"
+	"log"
 )
 
 type CiTimers struct {
@@ -36,20 +37,24 @@ type CiRunner struct {
 func (this *CiRunner) readConfig(ini_file string) error {
 	config_data, err := ini.LoadFile(ini_file)
 	if err != nil {
+	    logger.LogString(err.Error())
 		return err
 	}
 	config_tmp, ok := config_data.Get("mysql", "connect")
 	if !ok {
+	    logger.LogString("Can't read MySQL connect parameters")
 		return fmt.Errorf("Can't read MySQL connect parameters")
 	}
 	this.config = config_tmp
 	config_tmp, ok = config_data.Get("server", "workers")
 	if !ok {
+	    logger.LogString("Can't read workers number")
 		return fmt.Errorf("Can't read workers number")
 	}
 	this.nmb = config_tmp
 	config_tmp, ok = config_data.Get("server", "wait")
 	if !ok {
+	    logger.LogString("Can't read wait time")
 		return fmt.Errorf("Can't read wait time")
 	}
 	nmb, err := strconv.Atoi(config_tmp)
@@ -63,7 +68,6 @@ func (this *CiRunner) readConfig(ini_file string) error {
 
 	time_tmp, ok := config_data.Get("mysql", "timetoclean")
 	if ok {
-
 		this.cleantime = time_tmp
 	}
 
@@ -78,12 +82,16 @@ func (this *CiRunner) MakeFakeOuptut(id int, message string) error {
 	var con mysqlsaver.MySQLSaver
 	dbErr := con.Init(this.config, nil)
 	if dbErr != nil {
+	    logger.Log("DataBase saving error %s\n", dbErr.Error())
 		return fmt.Errorf("DataBase saving error %s\n", dbErr)
 	}
 
 	defer con.Finalize()
 
 	err := con.InsertOutput(id, message)
+	if err!=nil {
+	    logger.Log("InsertOutput error %s", err.Error())
+	}
 	return err
 }
 
@@ -91,18 +99,21 @@ func (this *CiRunner) MakeChild(id int) error {
 	var con mysqlsaver.MySQLSaver
 	dbErr := con.Init(this.config, nil)
 	if dbErr != nil {
+	    logger.Log("DataBase saving error %s\n", dbErr.Error())
 		return fmt.Errorf("DataBase saving error %s\n", dbErr)
 	}
 	defer con.Finalize()
 
 	err_db := con.TakeJob(id)
 	if err_db != nil {
+	    logger.LogString(err_db.Error())
 		return err_db
 	}
 	cmd := os.Args[0]
 	binary, lookErr := exec.LookPath(cmd)
 	if lookErr != nil {
 		con.CompleteJob(id)
+		logger.LogString(lookErr.Error())
 		return lookErr
 	}
 
@@ -125,11 +136,11 @@ func (this *CiRunner) MakeChild(id int) error {
 	pid, err := syscall.ForkExec(binary, argv, &procAttr)
 	err_msg := fmt.Sprintf("Started task %d for id %d", pid, id)
 	if err != nil {
+	    logger.LogString(err_msg)
 		con.InsertOutput(id, err_msg)
 		con.CompleteJob(id)
 	}
 	this.ci_pids = append(this.ci_pids, pid)
-	log.Println(err_msg)
 	return err
 }
 
@@ -139,6 +150,7 @@ func (this *CiRunner) GetNextId() (int, error) {
 	var con mysqlsaver.MySQLSaver
 	dbErr := con.Init(this.config, nil)
 	if dbErr != nil {
+	    logger.Log("DataBase saving error %s\n", dbErr.Error())
 		return 0, fmt.Errorf("DataBase saving error %s\n", dbErr)
 	}
 
@@ -165,6 +177,7 @@ func (this *CiRunner) _scanStartedChilds(found_threads bool) (error, bool) {
 		var wstat syscall.WaitStatus
 		pid_ret, err := syscall.Wait4(pid, &wstat, syscall.WNOHANG, nil)
 		if err != nil {
+		    logger.LogString(err.Error())
 			return err, found_threads
 		}
 		if pid_ret == pid && wstat.Exited() {
@@ -185,17 +198,20 @@ func (this *CiRunner) CronJob(task_id int, task_name string, task_commit string)
 	var con mysqlsaver.MySQLSaver
 	dbErr := con.Init(this.config, nil)
 	if dbErr != nil {
+	    logger.LogString(dbErr.Error())
 		log.Printf("%s\n", dbErr.Error())
 		return
 	}
 	defer con.Finalize()
 
 	if err, fnd, _, id := con.CheckUser("su_checker", "nopasswd"); err != nil {
+	    logger.Log("DataBase error %s\n", err.Error())
 		log.Printf("DataBase error %s\n", err.Error())
 		return
 	} else {
 		if fnd {
 			if err, _ := con.InsertJob(id, fmt.Sprintf("Autostart task %s", task_name), task_commit, "2", task_id, fmt.Sprintf("Autostart task %s", task_name)); err != nil {
+			    logger.Log("DataBase error %s\n", err.Error())
 				log.Printf("DataBase error %s\n", err.Error())
 				return
 			}
@@ -220,11 +236,13 @@ func (this *CiRunner) Run(conf string) error {
 	this.ci_busy_threads = 0
 	err := this.readConfig(conf)
 	if err != nil {
+	    logger.LogString(err.Error())
 		return err
 	}
 	var con mysqlsaver.MySQLSaver
 	dbErr := con.Init(this.config, nil)
 	if dbErr != nil {
+	    logger.Log("DataBase saving error %s\n", dbErr.Error())
 		return fmt.Errorf("DataBase saving error %s\n", dbErr)
 	}
 
@@ -234,6 +252,7 @@ func (this *CiRunner) Run(conf string) error {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for sig := range c {
+		    logger.Log("Got signal %s", sig.String())
 			log.Printf("Got signal %s", sig.String())
 			os.Exit(0)
 		}
@@ -241,6 +260,7 @@ func (this *CiRunner) Run(conf string) error {
 
 	err_t, timers := con.GetListOfTimedId()
 	if err_t != nil {
+	    logger.LogString(err_t.Error())
 		return err_t
 	}
 
@@ -248,6 +268,7 @@ func (this *CiRunner) Run(conf string) error {
 	for _, val := range timers {
 		task_id_int, err_c := strconv.Atoi(val[0])
 		if err_c != nil {
+		    logger.LogString(err_c.Error())
 			return err_c
 		}
 
@@ -264,6 +285,7 @@ func (this *CiRunner) Run(conf string) error {
 			var con mysqlsaver.MySQLSaver
 			dbErr := con.Init(this.config, nil)
 			if dbErr != nil {
+			    logger.LogString(dbErr.Error())
 				return
 			}
 
@@ -271,6 +293,7 @@ func (this *CiRunner) Run(conf string) error {
 
 			err_t, timers := con.GetListOfTimedId()
 			if err_t != nil {
+			    logger.LogString(err_t.Error())
 				return
 			}
 
@@ -279,6 +302,7 @@ func (this *CiRunner) Run(conf string) error {
 			for _, val := range timers {
 				task_id_int, err_c := strconv.Atoi(val[0])
 				if err_c != nil {
+				    logger.LogString(err_c.Error())
 					return
 				}
 
@@ -304,6 +328,7 @@ func (this *CiRunner) Run(conf string) error {
 				fnd := false
 				task_id_int, err_c := strconv.Atoi(val[0])
 				if err_c != nil {
+				    logger.LogString(err_c.Error())
 					return
 				}
 
@@ -330,6 +355,7 @@ func (this *CiRunner) Run(conf string) error {
 			if err != nil {
 				if err2 := this.MakeFakeOuptut(id, fmt.Sprintf("%s", err.Error())); err2 != nil {
 					log.Printf("Got error: %s", err2.Error())
+					logger.Log("Got error: %s", err2.Error())
 					os.Exit(1)
 				}
 			}
@@ -337,6 +363,7 @@ func (this *CiRunner) Run(conf string) error {
 				if err = this.MakeChild(id); err != nil {
 					if err2 := this.MakeFakeOuptut(id, fmt.Sprintf("%s", err.Error())); err2 != nil {
 						log.Printf("Got error: %s", err2.Error())
+						logger.Log("Got error: %s", err2.Error())
 						os.Exit(1)
 					}
 				}
@@ -344,11 +371,13 @@ func (this *CiRunner) Run(conf string) error {
 				found_threads = true
 			} else {
 				if err, found_threads = this._scanStartedChilds(found_threads); err != nil {
+				    logger.LogString(err.Error())
 					return err
 				}
 			}
 		} else {
 			if err, found_threads = this._scanStartedChilds(found_threads); err != nil {
+			    logger.LogString(err.Error())
 				return err
 			}
 		}
@@ -367,6 +396,7 @@ func (this *CiRunner) Run(conf string) error {
 func (this *CiRunner) SelfRun(conf string) error {
 	err := this.readConfig(conf)
 	if err != nil {
+	    logger.LogString(err.Error())
 		return err
 	}
 	this.cmd = exec.Command(os.Args[0], "-job-runner", this.nmb)
@@ -376,11 +406,13 @@ func (this *CiRunner) SelfRun(conf string) error {
 
 			err := this.cmd.Start()
 			if err != nil {
+			    logger.LogString(err.Error())
 				log.Fatal(err)
 			}
 			err = this.cmd.Wait()
 			log.Printf("Command finished with error: %v", err)
 			if err != nil {
+			    logger.Log("Command finished with error: %v", err)
 				os.Exit(2)
 			}
 		}

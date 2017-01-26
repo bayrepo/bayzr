@@ -1,3 +1,6 @@
+* Fri Jan 27 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-18
+- Added citool logging to file /var/log/citool/citool.log
+
 * Fri Jan 20 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-17
 - Fixed cron task, saving type of checking and parsing of diff file
 

@@ -149,5 +149,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_sysconfdir}/bzr.d/*.tpl
 %{_sysconfdir}/bzr.d/*.xml
 %{_datarootdir}/bzr.java/*.jar
+%defattr(-,checker,checker,-)
+%dir /var/log/citool
+
 
 %changelog

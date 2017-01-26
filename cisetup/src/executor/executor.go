@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"logger"
 )
 
 const (
@@ -41,10 +42,12 @@ func (this *CiExec) IsDirectory(path string) (bool, error) {
 func (this *CiExec) readConfig(ini_file string) error {
 	config_data, err := ini.LoadFile(ini_file)
 	if err != nil {
+	    logger.LogString(err.Error())
 		return err
 	}
 	config_tmp, ok := config_data.Get("mysql", "connect")
 	if !ok {
+	    logger.LogString("Can't read MySQL connect parameters")
 		return fmt.Errorf("Can't read MySQL connect parameters")
 	}
 	this.config = config_tmp
@@ -72,6 +75,7 @@ func (this *CiExec) readConfig(ini_file string) error {
 func (this *CiExec) GetTaskInfo() (map[string]string, error) {
 	err, result := this.con.GetTaskFullInfo(this.ci_id)
 	if err != nil {
+	    logger.LogString(err.Error())
 		return result, err
 	}
 	return result, nil
@@ -79,6 +83,9 @@ func (this *CiExec) GetTaskInfo() (map[string]string, error) {
 
 func (this *CiExec) MakeFakeOuptut(message string) error {
 	err := this.con.InsertOutput(this.ci_id, message)
+	if err!=nil{
+	    logger.LogString(err.Error())
+	}
 	return err
 }
 
@@ -105,9 +112,11 @@ func (this *CiExec) Exc(args []string) error {
 		var stdout io.ReadCloser
 		var stderr io.ReadCloser
 		if stdout, err = cmd.StdoutPipe(); err != nil {
+		    logger.Log("open stdout pipe error %s\n", err.Error())
 			return fmt.Errorf("open stdout pipe error %s\n", err)
 		}
 		if stderr, err = cmd.StderrPipe(); err != nil {
+		    logger.Log("open stdout pipe error %s\n", err.Error())
 			return fmt.Errorf("open stdout pipe error %s\n", err)
 		}
 		scanner_out := bufio.NewScanner(stdout)
@@ -120,6 +129,7 @@ func (this *CiExec) Exc(args []string) error {
 		}()
 
 		if err = cmd.Start(); err != nil {
+		    logger.Log("start command error %s\n", err.Error())
 			return fmt.Errorf("start command error %s\n", err)
 		}
 
@@ -128,10 +138,12 @@ func (this *CiExec) Exc(args []string) error {
 		}
 
 		if err = cmd.Wait(); err != nil {
+		    logger.Log("wait command error %s\n", err.Error())
 			return fmt.Errorf("wait command error %s\n", err)
 		}
 		return nil
 	}
+	logger.LogString("empty compile command\n")
 	return fmt.Errorf("empty compile command\n")
 }
 
@@ -139,10 +151,12 @@ func (this *CiExec) Run(id int, conf string) error {
 	this.ci_id = id
 	err := this.readConfig(conf)
 	if err != nil {
+	    logger.LogString(err.Error())
 		return err
 	}
 	dbErr := this.con.Init(this.config, nil)
 	if dbErr != nil {
+	    logger.Log("DataBase saving error %s\n", dbErr.Error())
 		return fmt.Errorf("DataBase saving error %s\n", dbErr)
 	}
 	defer this.con.Finalize()
@@ -150,6 +164,7 @@ func (this *CiExec) Run(id int, conf string) error {
 
 	taskInfo, err := this.GetTaskInfo()
 	if err != nil {
+	    logger.Log("Task runner got error %s", err.Error())
 		log.Printf("Task runner got error %s", err.Error())
 		return err
 	}
@@ -300,7 +315,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	}
 
 	err = os.Chdir("/home/checker/chkdir")
-	this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to /home/checker"))
+	this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to /home/checker/chkdir"))
 	if err != nil {
 		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + err.Error())
@@ -434,17 +449,17 @@ connecturl=%s
 
 	need_diff := ""
 	if taskInfo["diff"] == "1" {
-		need_diff = "-diff patch_f.patch"
+		need_diff = "-diff /home/checker/patch_f.patch"
 		if commit_first == "" {
 			if taskInfo["use_branch"] == "2" {
-				err = this.Exc([]string{"/usr/bin/git", "diff", "HEAD^", "HEAD", ">patch_f.patch"})
+				err = this.Exc([]string{"/usr/bin/git", "diff", "HEAD^", "HEAD", ">/home/checker/patch_f.patch"})
 				if err != nil {
 					this.con.UpdateJobState(this.ci_id, 1)
 					this.MakeFakeOuptut("Error: " + err.Error())
 					return err
 				}
 			} else {
-				err = this.Exc([]string{"/usr/bin/git", "format-patch", "-1", strings.Trim(commit_last, " \n"), ">patch_f.patch"})
+				err = this.Exc([]string{"/usr/bin/git", "format-patch", "-1", strings.Trim(commit_last, " \n"), ">/home/checker/patch_f.patch"})
 				if err != nil {
 					this.con.UpdateJobState(this.ci_id, 1)
 					this.MakeFakeOuptut("Error: " + err.Error())
@@ -452,14 +467,14 @@ connecturl=%s
 				}
 			}
 		} else {
-			err = this.Exc([]string{"/usr/bin/git", "diff", strings.Trim(commit_first, " \n"), strings.Trim(commit_last, " \n"), ">patch_f.patch"})
+			err = this.Exc([]string{"/usr/bin/git", "diff", strings.Trim(commit_first, " \n"), strings.Trim(commit_last, " \n"), ">/home/checker/patch_f.patch"})
 			if err != nil {
 				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())
 				return err
 			}
 		}
-		err = this.Exc([]string{"/usr/bin/cat", "patch_f.patch"})
+		err = this.Exc([]string{"/usr/bin/cat", "/home/checker/patch_f.patch"})
 		if err != nil {
 			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
@@ -479,7 +494,7 @@ connecturl=%s
 				check_fnd = true
 			}
 			cmd := strings.Replace(cmd_macros, "{{CHECK}}",
-				fmt.Sprintf("/usr/bin/bayzr -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
+				fmt.Sprintf("/usr/bin/bayzr -debug-commands -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
 				1)
 
 			if cmd != "" {
@@ -619,7 +634,7 @@ connecturl=%s
 			if err_i != nil {
 				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err_i.Error())
-				return err
+				return err_i
 			}
 
 			err, nmb_errors := this.con.GetBuildErrors(build_id)
