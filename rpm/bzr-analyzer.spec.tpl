@@ -106,6 +106,7 @@ mkdir -p $RPM_BUILD_ROOT/mnt/chroot/
 mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system/
 mkdir -p $RPM_BUILD_ROOT/usr/share/bzr.cron/
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/cron.d
+mkdir -p $RPM_BUILD_ROOT/var/log/citool
 install -D -p -m 755 bin/citool %{buildroot}%{_sbindir}
 install -D -p -m 600 cisetup/cfg/citool.ini %{buildroot}%{_sysconfdir}
 install -D -p -m 644 cisetup/cfg/citool.service %{buildroot}/usr/lib/systemd/system/
