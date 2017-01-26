@@ -137,6 +137,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/systemd/system/citool.service
 /usr/share/bzr.cron/bayzr_clean_orph_environ.sh
 %config(noreplace) %{_sysconfdir}/cron.d/bayzr_citool-cron
+%dir /var/log/citool
 %endif
 
 %files
@@ -151,7 +152,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_sysconfdir}/bzr.d/*.xml
 %{_datarootdir}/bzr.java/*.jar
 %defattr(-,checker,checker,-)
-%dir /var/log/citool
-
 
 %changelog
