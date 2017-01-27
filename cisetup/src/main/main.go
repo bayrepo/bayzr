@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"logger"
 )
 
 var db_passwd = "sonarPASS1234"
@@ -1044,6 +1045,7 @@ func main() {
 		var rnr runner.CiRunner
 		var srv server.CiServer
 		if err := srv.PreRun("/etc/citool.ini"); err != nil {
+		    logger.LogString(err.Error())
 			fmt.Println(err)
 			os.Exit(255)
 		}
@@ -1051,9 +1053,11 @@ func main() {
 		defer rnr.KillSelfRun()
 		if err == nil {
 			if err := srv.Run(11000, "/etc/citool.ini"); err != nil {
+			    logger.LogString(err.Error())
 				fmt.Println(err)
 			}
 		} else {
+		    logger.LogString(err.Error())
 			fmt.Println(err)
 		}
 		os.Exit(0)
@@ -1064,6 +1068,7 @@ func main() {
 		rnr.SetRunners(int64(jobRunner))
 		err := rnr.Run("/etc/citool.ini")
 		if err != nil {
+		    logger.LogString(err.Error())
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
@@ -1075,6 +1080,7 @@ func main() {
 		var ex executor.CiExec
 		err := ex.Run(int(taskRunner), "/etc/citool.ini")
 		if err != nil {
+		    logger.LogString(err.Error())
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
