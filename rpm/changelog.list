@@ -1,3 +1,6 @@
+* Wed May 17 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-20
+- Fix number of result_id in jobs page
+
 * Sat Jan 28 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-19
 - Fixed trouble with mysql too many connections
 
