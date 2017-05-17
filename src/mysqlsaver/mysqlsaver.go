@@ -1439,7 +1439,7 @@ func (this *MySQLSaver) GetBuildId(name string) (error, int) {
 
 func (this *MySQLSaver) GetResult(id int) (error, []string) {
 	result := []string{}
-	stmtOut, err := this.db.Prepare(`select file_string from bayzr_err_extend_file where build_number = ? order by id`)
+	stmtOut, err := this.db.Prepare(`select t1.file_string from bayzr_err_extend_file as t1 join bayzr_JOBS as t2 on t1.build_number = t2.build_id where t2.id = ? order by t1.id`)
 	if err != nil {
 		return err, []string{}
 	}
