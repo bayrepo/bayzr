@@ -308,6 +308,23 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 			return err
 		}
 	}
+	fnd, err = this._checkTable("bayzr_JOBADDP")
+	if err != nil {
+		return err
+	}
+	if fnd == false {
+		if err := this._executeSQLCpammnd(
+			`CREATE TABLE IF NOT EXISTS bayzr_JOBADDP(
+		        id INTEGER  NOT NULL AUTO_INCREMENT,
+		        job_id INTEGER NOT NULL, 
+		        name VARCHAR(255) DEFAULT "",
+		        value VARCHAR(255) DEFAULT "",
+		        PRIMARY KEY (id),
+                INDEX bayzr_JOBADDP_name_I (name(20)),
+                INDEX bayzr_JOBADDP_job_id_I (job_id))`); err != nil {
+			return err
+		}
+	}
 	if should_add_admin == true {
 		res, err := this.db.Exec(`INSERT INTO bayzr_RULE(name, 
                                         description) VALUES('ru_admin', 'Admin permissions(Can do anything)')`)
@@ -1125,6 +1142,46 @@ func (this *MySQLSaver) InsertJob(owner_id int, name string, commit string, prio
 	}
 
 	return nil, int(id)
+}
+
+func (this *MySQLSaver) InsertJobParam(job_id int, name string, value string) (error) {
+	if this.ok == 1 {
+
+		_, err2 := this.db.Exec(`INSERT INTO bayzr_JOBADDP(job_id, name, value) 
+                                        VALUES(?,?,?)`, job_id, name, value)
+		if err2 != nil {
+			return err2
+		}
+
+	}
+
+	return nil
+}
+
+func (this *MySQLSaver) getJobAddParams(job_id int) (error, [][]string) {
+	result := [][]string{}
+	stmtOut, err := this.db.Prepare(`select name, value from bayzr_JOBADDP where job_id = ?`)
+	if err != nil {
+		return err, result
+	}
+	defer stmtOut.Close()
+
+	rows, err := stmtOut.Query(job_id)
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var (
+			t1_name     string
+			t1_value    string
+		)
+		if err := rows.Scan(&t1_name, &t1_value); err != nil {
+			return err, [][]string{}
+		}
+		result = append(result, []string{t1_name, t1_value})
+	}
+
+	return err, result
 }
 
 func (this *MySQLSaver) GetJobs(page int) (error, [][]string, int) {

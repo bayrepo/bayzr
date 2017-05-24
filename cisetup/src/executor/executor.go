@@ -644,7 +644,7 @@ connecturl=%s
 				return err
 			}
 
-			url_report := fmt.Sprintf("%s/result/%d", this.sIp, build_id)
+			url_report := fmt.Sprintf("%s/result/%d", this.sIp, this.ci_id)
 			url_output := fmt.Sprintf("%s/output/%d", this.sIp, this.ci_id)
 
 			post_script := "#!/bin/bash\n\n"
@@ -663,7 +663,7 @@ connecturl=%s
 				return err
 			}
 
-			err = this.Exc([]string{"./post_execute", nmb_errors, url_report, url_output})
+			err = this.Exc([]string{"./post_execute", nmb_errors, url_report, url_output, fmt.Sprintf("%d", this.ci_id)})
 			if err != nil {
 				this.con.UpdateJobState(this.ci_id, 1)
 				this.MakeFakeOuptut("Error: " + err.Error())

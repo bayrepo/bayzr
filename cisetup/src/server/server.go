@@ -206,7 +206,7 @@ func (this *CiServer) Run(port int, conf string) error {
 
 	router.GET("/", this.root)
 	router.POST("/", this.root)
-	
+
 	router.GET("/info", this.info)
 
 	router.GET("/welcome", this.welcome)
@@ -702,7 +702,8 @@ func (this *CiServer) ping(c *gin.Context) {
 //curl -u su_admin:7c542b69b3f8af507e7808eed20b0d
 // --data "user_token=7c542b69b3f8af507e7808eed20b0d&
 //task_token=6fae706abecfbef0a8d1b3b7f775a7
-//&commit=master&descr=my" http://127.0.0.1:11000/api/jobjson
+//&commit=master&descr=my&anyparam1=value1&anyparam2=value2"
+// http://127.0.0.1:11000/api/jobjson
 func (this *CiServer) addtjson(c *gin.Context) {
 	user_token := c.DefaultPostForm("user_token", "")
 	task_token := c.DefaultPostForm("task_token", "")
@@ -764,6 +765,15 @@ func (this *CiServer) addtjson(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": err, "status": http.StatusOK, "result": "error"})
 		return
 	} else {
+		c.Request.ParseForm()
+		for key, value := range c.Request.PostForm {
+			if (key != "user_token") && (key != "task_token") && (key != "commit") && (key != "descr") {
+				if err := con.InsertJobParam(j_id, key, value[0]); err != nil {
+					c.JSON(http.StatusOK, gin.H{"message": err, "status": http.StatusOK, "result": "error"})
+					return
+				}
+			}
+		}
 		c.JSON(http.StatusOK, gin.H{"message": "done", "status": http.StatusOK, "result": fmt.Sprintf("%d", j_id)})
 	}
 }
