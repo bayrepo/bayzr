@@ -423,11 +423,14 @@ func SonarActionInstall(parent interface{}) error {
 	fmt.Println("Chose version of SonarQube will be installed:")
 	fmt.Println("   1. SonarQube 6.0")
 	fmt.Println("   2. SonarQube 5.6")
-	fmt.Println("Press 1 or 2")
+	fmt.Println("   3. SonarQube 6.4")
+	fmt.Println("Press 1 or 2 or 3")
 	sonar_ch := "1"
 	fmt.Scan(&sonar_ch)
 	if strings.Trim(sonar_ch, " \n\t") == "1" {
 		sonar_version = "6.0"
+	} else if strings.Trim(sonar_ch, " \n\t") == "3" {
+		sonar_version = "6.4"
 	}
 	fmt.Println("Set password for sonarqube database:")
 	sonar_ch = "1"
