@@ -1,3 +1,6 @@
+* Mon Jun 05 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-23
+- Added Clone command
+
 * Fri Jun 02 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-22
 - Added SonarQube 6.4 installation
 

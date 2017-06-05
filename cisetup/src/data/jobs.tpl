@@ -61,7 +61,7 @@
 
 		<div class="panel panel-default center-panel">
 
-                <a href="/job/add"><span class="glyphicon glyphicon-trash"></span>Создать новый процесс</a>
+                <a href="/job/add"><span class="glyphicon glyphicon-plus"></span>Создать новый процесс</a>
 				<table class="table table-striped">
 					<tr>
 						<th>&nbsp;</th>

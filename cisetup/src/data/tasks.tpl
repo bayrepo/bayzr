@@ -61,7 +61,7 @@
 
 		<div class="panel panel-default center-panel">
 
-                <a href="/tasks/add"><span class="glyphicon glyphicon-trash"></span>Создать новую задачу</a>
+                <a href="/tasks/add"><span class="glyphicon glyphicon-plus"></span>Создать новую задачу</a>
 				<table class="table table-striped">
 					<tr>
 						<th>#</th>
@@ -89,8 +89,9 @@
 						<td>{{index . 8}}</td>
 						<td>{{index . 12}}</td>
 						<td>
-							<a href="/task/{{index . 0}}">Изменить</a>
-							<a href="/taskdel/{{index . 0}}">Удалить</a>
+							<a href="/task/{{index . 0}}" title="Редактировать"><span class="glyphicon glyphicon-edit"></span></a>
+							<a href="/taskdel/{{index . 0}}" title="Удалить"><span class="glyphicon glyphicon-trash"></span></a>
+							<a href="/tasks/add?clone={{index . 0}}" title="Клонировать"><span class="glyphicon glyphicon-copyright-mark"></span></a>
 						</td>
 					</tr>
 {{end}}

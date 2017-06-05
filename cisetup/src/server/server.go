@@ -867,6 +867,71 @@ func (this *CiServer) tasks(c *gin.Context) {
 
 	hdr["User"] = session.Get("login").(string)
 
+	tid := c.DefaultQuery("clone", "0")
+	tid_number, err := strconv.Atoi(tid)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/tasks/")
+		return
+	}
+	if tid_number > 0 {
+		var con mysqlsaver.MySQLSaver
+		dbErr := con.Init(this.config, nil)
+		if dbErr != nil {
+			this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", dbErr.Error()))
+			return
+		}
+		defer con.Finalize()
+
+		err, lst := con.GetTask(tid_number)
+		if err != nil {
+			this.printSomethinWrong(c, 500, fmt.Sprintf("%s\n", err.Error()))
+			return
+		}
+
+		if len(lst[10]) > 0 {
+			for _, val := range strings.Split(lst[10], ",") {
+				for i, p_val := range p_u_list {
+					if p_val[0] == strings.Trim(val, " ") {
+						p_u_list[i][1] = "selected"
+						break
+					}
+				}
+			}
+		}
+
+		if len(lst[4]) > 0 {
+			for _, val := range strings.Split(lst[4], ",") {
+				for i, p_val := range p_pkg_list {
+					if p_val[0] == strings.Trim(val, " ") {
+						p_pkg_list[i][1] = "selected"
+						break
+					}
+				}
+			}
+		}
+
+		hdr["TaskId"] = lst[0]
+		hdr["TaskName"] = lst[1]
+		hdr["TaskBranch"] = lst[12]
+		hdr["TaskType"] = lst[2]
+		hdr["TaskGit"] = lst[3]
+		hdr["TaskPackGs"] = ""
+		hdr["TaskPackGsEarl"] = p_pkg_list
+		hdr["TaskCmds"] = lst[5]
+		hdr["TaskPerType"] = lst[6]
+		hdr["TaskPeriod"] = lst[7]
+		hdr["TaskUsers"] = p_u_list
+		hdr["TaskConfig"] = lst[9]
+		hdr["TaskToken"] = lst[11]
+		hdr["TaskResult"] = lst[13]
+		hdr["TaskBrn"] = lst[14]
+		hdr["TaskDiff"] = lst[15]
+		hdr["TaskPost"] = lst[16]
+		hdr["TaskDir"] = lst[17]
+		hdr["TaskPreBuild"] = lst[18]
+
+	}
+
 	c.HTML(200, "task", hdr)
 }
 
