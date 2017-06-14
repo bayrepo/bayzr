@@ -1443,6 +1443,23 @@ func (this *MySQLSaver) CompleteJob(id int) error {
 	return nil
 }
 
+func (this *MySQLSaver) AddBuildInfoBeforePost(id int) error {
+	if this.ok == 1 {
+		_, err3 := this.db.Exec(`update bayzr_JOBS as b1 
+		join 
+		(select tt1.id as idb, tt2.id as idj from bayzr_build_info as tt1 
+		join 
+		(select concat(t2.name, ".", t1.id) as nm, t1.id from bayzr_JOBS as t1 join bayzr_TASK as t2 
+		on t1.task_id = t2.id) as tt2 on tt1.name_of_build = tt2.nm and tt1.completed = 1) as b2 
+		on b1.id = b2.idj set b1.build_id = b2.idb`)
+		if err3 != nil {
+			return err3
+		}
+	}
+
+	return nil
+}
+
 func (this *MySQLSaver) GetOut(id int) (error, [][]string) {
 	result := [][]string{}
 	stmtOut, err := this.db.Prepare(`select t1.time_of_string, t1.line from bayzr_OUTPUT as t1 where t1.job_id = ? order by t1.time_of_string`)

@@ -622,6 +622,7 @@ connecturl=%s
 	post_cmds_raw := strings.Split(strings.Replace(taskInfo["post"], "\r", "", -1), "\n")
 
 	if len(post_cmds_raw) > 0 {
+		this.con.AddBuildInfoBeforePost(this.ci_id)
 		err, result := this.con.GetJob(this.ci_id)
 		if err != nil {
 			this.con.UpdateJobState(this.ci_id, 1)

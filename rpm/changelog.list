@@ -1,3 +1,6 @@
+* Wed Jun 14 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-24
+- Added build_id before post script
+
 * Mon Jun 05 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-23
 - Added Clone command
 
