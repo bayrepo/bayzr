@@ -73,6 +73,7 @@
 						<th>Детали исходного кода</th>
 						<th>Дата начала</th>
 						<th>Дата окончания</th>
+						<th>Coverity</th>
 						<th>Результат</th>
 						<th>Вывод</th>
 						<th>Действие</th>
@@ -92,6 +93,7 @@
 						<td>{{index . 2}}</td>
 						<td>{{index . 3}}</td>
 						<td>{{index . 4}}</td>
+						<td>{{if ne (index . 11) ""}}<a href="{{index . 11}}">yes</a>{{else}}no{{end}}</td>
 						<td>{{if ne (index . 5) "0"}}<a href="/result/{{index . 0}}">Результат</a>{{else}}Нет результата{{end}}</td>
 						<td>{{if ne (index . 3) "0000-00-00 00:00:00"}}<a href="/output/{{index . 0}}">Вывод</a>{{else}}Нет вывода{{end}}</td>
 						<td>

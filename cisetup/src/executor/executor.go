@@ -8,13 +8,13 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"logger"
 	"mysqlsaver"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
-	"logger"
 )
 
 const (
@@ -42,12 +42,12 @@ func (this *CiExec) IsDirectory(path string) (bool, error) {
 func (this *CiExec) readConfig(ini_file string) error {
 	config_data, err := ini.LoadFile(ini_file)
 	if err != nil {
-	    logger.LogString(err.Error())
+		logger.LogString(err.Error())
 		return err
 	}
 	config_tmp, ok := config_data.Get("mysql", "connect")
 	if !ok {
-	    logger.LogString("Can't read MySQL connect parameters")
+		logger.LogString("Can't read MySQL connect parameters")
 		return fmt.Errorf("Can't read MySQL connect parameters")
 	}
 	this.config = config_tmp
@@ -75,7 +75,7 @@ func (this *CiExec) readConfig(ini_file string) error {
 func (this *CiExec) GetTaskInfo() (map[string]string, error) {
 	err, result := this.con.GetTaskFullInfo(this.ci_id)
 	if err != nil {
-	    logger.LogString(err.Error())
+		logger.LogString(err.Error())
 		return result, err
 	}
 	return result, nil
@@ -83,8 +83,8 @@ func (this *CiExec) GetTaskInfo() (map[string]string, error) {
 
 func (this *CiExec) MakeFakeOuptut(message string) error {
 	err := this.con.InsertOutput(this.ci_id, message)
-	if err!=nil{
-	    logger.LogString(err.Error())
+	if err != nil {
+		logger.LogString(err.Error())
 	}
 	return err
 }
@@ -112,11 +112,11 @@ func (this *CiExec) Exc(args []string) error {
 		var stdout io.ReadCloser
 		var stderr io.ReadCloser
 		if stdout, err = cmd.StdoutPipe(); err != nil {
-		    logger.Log("open stdout pipe error %s\n", err.Error())
+			logger.Log("open stdout pipe error %s\n", err.Error())
 			return fmt.Errorf("open stdout pipe error %s\n", err)
 		}
 		if stderr, err = cmd.StderrPipe(); err != nil {
-		    logger.Log("open stdout pipe error %s\n", err.Error())
+			logger.Log("open stdout pipe error %s\n", err.Error())
 			return fmt.Errorf("open stdout pipe error %s\n", err)
 		}
 		scanner_out := bufio.NewScanner(stdout)
@@ -129,7 +129,7 @@ func (this *CiExec) Exc(args []string) error {
 		}()
 
 		if err = cmd.Start(); err != nil {
-		    logger.Log("start command error %s\n", err.Error())
+			logger.Log("start command error %s\n", err.Error())
 			return fmt.Errorf("start command error %s\n", err)
 		}
 
@@ -138,7 +138,7 @@ func (this *CiExec) Exc(args []string) error {
 		}
 
 		if err = cmd.Wait(); err != nil {
-		    logger.Log("wait command error %s\n", err.Error())
+			logger.Log("wait command error %s\n", err.Error())
 			return fmt.Errorf("wait command error %s\n", err)
 		}
 		return nil
@@ -151,12 +151,12 @@ func (this *CiExec) Run(id int, conf string) error {
 	this.ci_id = id
 	err := this.readConfig(conf)
 	if err != nil {
-	    logger.LogString(err.Error())
+		logger.LogString(err.Error())
 		return err
 	}
 	dbErr := this.con.Init(this.config, nil)
 	if dbErr != nil {
-	    logger.Log("DataBase saving error %s\n", dbErr.Error())
+		logger.Log("DataBase saving error %s\n", dbErr.Error())
 		return fmt.Errorf("DataBase saving error %s\n", dbErr)
 	}
 	defer this.con.Finalize()
@@ -164,7 +164,7 @@ func (this *CiExec) Run(id int, conf string) error {
 
 	taskInfo, err := this.GetTaskInfo()
 	if err != nil {
-	    logger.Log("Task runner got error %s", err.Error())
+		logger.Log("Task runner got error %s", err.Error())
 		log.Printf("Task runner got error %s", err.Error())
 		return err
 	}
@@ -204,21 +204,6 @@ func (this *CiExec) Run(id int, conf string) error {
 		}
 
 	}()
-
-	/*err = this.Exc([]string{"/usr/sbin/chroot", fmt.Sprintf("%scentos-7-mod.%d", chroot_path, id), "/bin/env", "-i", "HOME=/home/checker", "TERM=\"$TERM\"", "PS1='\\u:\\w\\$ '", "PATH=/bin:/usr/bin:/sbin:/usr/sbin", "/bin/bash", "--login", "+h"})
-	if err != nil {
-	    this.con.UpdateJobState(this.ci_id, 1)
-		this.MakeFakeOuptut("Error: " + err.Error())
-		return err
-	}
-
-	defer func() {
-		err = this.Exc([]string{"exit"})
-		if err != nil {
-			this.MakeFakeOuptut("Error: " + err.Error())
-		}
-
-	}()*/
 
 	d, err1 := syscall.Open("/", syscall.O_RDONLY, 0)
 	if err1 != nil {
@@ -338,17 +323,7 @@ func (this *CiExec) Run(id int, conf string) error {
 	origin_catalog := ""
 
 	if len(src_raw_str) > 0 {
-		/*src_raw_str_raw := strings.Split(src_raw_str, " ")
-		git_list := []string{}
-		for _, val := range src_raw_str_raw {
-			item_ := strings.Trim(val, " \n,")
-			if item_ != "" {
-				git_list = append(git_list, item_)
-			}
-		}*/
 		git_project := src_raw_str
-		//if len(git_list) > 0 {
-		//git_project = git_list[len(git_list)-1]
 		err = this.Exc([]string{"/usr/bin/git", "clone", git_project})
 		if err != nil {
 			this.con.UpdateJobState(this.ci_id, 1)
@@ -406,7 +381,6 @@ func (this *CiExec) Run(id int, conf string) error {
 			}
 		}
 
-		//}
 	}
 
 	task_keys_str := strings.Trim(taskInfo["task_name"], " \n,")
@@ -475,6 +449,21 @@ connecturl=%s
 			}
 		}
 		err = this.Exc([]string{"/usr/bin/cat", "/home/checker/patch_f.patch"})
+		if err != nil {
+			this.con.UpdateJobState(this.ci_id, 1)
+			this.MakeFakeOuptut("Error: " + err.Error())
+			return err
+		}
+	}
+	
+	bld_err, cov_id := this.con.CreateCurrentBuild(this.ci_id)
+	if bld_err != nil {
+		this.con.UpdateJobState(this.ci_id, 1)
+		this.MakeFakeOuptut("Error: " + bld_err.Error())
+		return err
+	}
+	if cov_id>0 {
+	    err = this.Exc([]string{"/usr/bin/tar", "zcf", fmt.Sprintf("/home/checker/%d.tar.gz", this.ci_id), origin_catalog})
 		if err != nil {
 			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
@@ -560,13 +549,6 @@ connecturl=%s
 			}
 		}
 
-		//s_err, s_lst := this.con.GetListOfFilesWitherr(this.build_id)
-		//if s_err != nil {
-		//  this.con.UpdateJobState(this.ci_id, 1)
-		//	this.MakeFakeOuptut("Error: " + s_err.Error())
-		//	return s_err
-		//}
-
 		if taskInfo["dir_to_execute"] != "" {
 			err = os.Chdir(taskInfo["dir_to_execute"])
 			this.MakeFakeOuptut(fmt.Sprintf("+++: chdir to " + taskInfo["dir_to_execute"]))
@@ -579,12 +561,6 @@ connecturl=%s
 
 		sona_config_s := fmt.Sprintf("sonar.projectKey=%s:%s\nsonar.projectName=%s\nsonar.projectVersion=%s\nsonar.sources=.\nsonar.sourceEncoding=UTF-8\nsonar.import_unknown_files=true\n",
 			task_keys[0], task_keys[1], task_keys[0], task_keys[2])
-
-		//if len(s_lst) > 0 {
-		//	sona_config_s = sona_config_s + "\nsonar.inclusions=" + strings.Join(s_lst, ",") + "\n"
-		//} else {
-		//	sona_config_s = sona_config_s + "\nsonar.inclusions=12345678900987654321.txt\n"
-		//}
 
 		err = ioutil.WriteFile("/home/checker/sonar-project.properties", []byte(sona_config_s), 0644)
 

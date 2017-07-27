@@ -779,23 +779,25 @@ func (this *CiServer) addtjson(c *gin.Context) {
 }
 
 type TaskForm struct {
-	TaskName       string   `form:"TaskName"`
-	TaskType       string   `form:"TaskType"`
-	TaskGit        string   `form:"TaskGit"`
-	TaskPackGs     []string `form:"TaskPackGs"`
-	TaskPackGsEarl []string `form:"TaskPackGsEarl"`
-	TaskCmds       []string `form:"TaskCmds"`
-	TaskPerType    string   `form:"TaskPerType"`
-	TaskPeriod     string   `form:"TaskPeriod"`
-	TaskUsers      []string `form:"TaskUsers"`
-	TaskConfig     []string `form:"TaskConfig"`
-	TaskBranch     string   `form:"TaskBranch"`
-	TaskResult     string   `form:"TaskResult"`
-	TaskBrn        string   `form:"TaskBrn"`
-	TaskDiff       string   `form:"TaskDiff"`
-	TaskPost       []string `form:"TaskPost"`
-	TaskDir        string   `form:"TaskDir"`
-	TaskPreBuild   []string `form:"TaskPreBuild"`
+	TaskName        string   `form:"TaskName"`
+	TaskType        string   `form:"TaskType"`
+	TaskGit         string   `form:"TaskGit"`
+	TaskPackGs      []string `form:"TaskPackGs"`
+	TaskPackGsEarl  []string `form:"TaskPackGsEarl"`
+	TaskCmds        []string `form:"TaskCmds"`
+	TaskPerType     string   `form:"TaskPerType"`
+	TaskPeriod      string   `form:"TaskPeriod"`
+	TaskUsers       []string `form:"TaskUsers"`
+	TaskConfig      []string `form:"TaskConfig"`
+	TaskBranch      string   `form:"TaskBranch"`
+	TaskResult      string   `form:"TaskResult"`
+	TaskBrn         string   `form:"TaskBrn"`
+	TaskDiff        string   `form:"TaskDiff"`
+	TaskPost        []string `form:"TaskPost"`
+	TaskDir         string   `form:"TaskDir"`
+	TaskPreBuild    []string `form:"TaskPreBuild"`
+	TaskaddPs       []string `form:"TaskaddPs"`
+	TaskaddPsFormer []string `form:"TaskaddPsFormer"`
 }
 
 func (this *CiServer) tasks(c *gin.Context) {
@@ -864,6 +866,8 @@ func (this *CiServer) tasks(c *gin.Context) {
 	hdr["TaskPost"] = ""
 	hdr["TaskDir"] = ""
 	hdr["TaskPreBuild"] = ""
+	hdr["TaskaddPs"] = ""
+	hdr["TaskaddPsFormer"] = ""
 
 	hdr["User"] = session.Get("login").(string)
 
@@ -996,6 +1000,8 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 	hdr["TaskPost"] = ""
 	hdr["TaskDir"] = ""
 	hdr["TaskPreBuild"] = ""
+	hdr["TaskaddPs"] = ""
+	hdr["TaskaddPsFormer"] = []string{}
 
 	var form TaskForm
 	if c.Bind(&form) == nil {
@@ -1080,12 +1086,23 @@ func (this *CiServer) tasks_post(c *gin.Context) {
 		hdr["TaskDir"] = form.TaskDir
 		hdr["TaskPreBuild"] = strings.Join(form.TaskPreBuild, "\n")
 
+		hdr["TaskaddPs"] = ""
+		
+		tmp_data := []string{}
+
+		if len(form.TaskaddPs) > 0 {
+			for _, val := range form.TaskaddPs {
+				tmp_data = append(tmp_data, val)
+			}
+		}
+		hdr["TaskaddPsFormer"] = tmp_data
+
 		if fnd_err == false {
 			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"].(string))
 			if err, _ := con.SaveTask(sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
 				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn, form.TaskDiff,
-				form.TaskPost, form.TaskDir, form.TaskPreBuild); err != nil {
+				form.TaskPost, form.TaskDir, form.TaskPreBuild, hdr["TaskaddPsFormer"].([]string)); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {
@@ -1208,6 +1225,12 @@ func (this *CiServer) tasks_edit(c *gin.Context) {
 		return
 	}
 
+	err, prm_lst := con.GetAddParams(tid_number)
+	if err != nil {
+		this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
+		return
+	}
+
 	if len(lst[10]) > 0 {
 		for _, val := range strings.Split(lst[10], ",") {
 			for i, p_val := range p_u_list {
@@ -1249,6 +1272,8 @@ func (this *CiServer) tasks_edit(c *gin.Context) {
 	hdr["TaskPost"] = lst[16]
 	hdr["TaskDir"] = lst[17]
 	hdr["TaskPreBuild"] = lst[18]
+	hdr["TaskaddPs"] = prm_lst
+	hdr["TaskaddPsFormer"] = []string{}
 
 	hdr["User"] = session.Get("login").(string)
 
@@ -1353,6 +1378,8 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 	hdr["TaskPost"] = lst[16]
 	hdr["TaskDir"] = lst[17]
 	hdr["TaskPreBuild"] = lst[18]
+	hdr["TaskaddPs"] = ""
+	hdr["TaskaddPsFormer"] = []string{}
 
 	var form TaskForm
 	if c.Bind(&form) == nil {
@@ -1437,12 +1464,20 @@ func (this *CiServer) tasks_edit_post(c *gin.Context) {
 		hdr["TaskDir"] = form.TaskDir
 		hdr["TaskPreBuild"] = strings.Join(form.TaskPreBuild, "\n")
 
+		tmp_data := []string{}
+		if len(form.TaskaddPs) > 0 {
+			for _, val := range form.TaskaddPs {
+				tmp_data = append(tmp_data, val)
+			}
+		}
+		hdr["TaskaddPsFormer"] = tmp_data
+
 		if fnd_err == false {
 			i_taskBranch, _ := strconv.Atoi(hdr["TaskBranch"].(string))
 			if err := con.UpdateTask(tid_number, sess_id.(int), form.TaskName, form.TaskType, form.TaskGit,
 				form.TaskPackGs, form.TaskPackGsEarl, form.TaskCmds, form.TaskPerType, form.TaskPeriod,
 				form.TaskUsers, form.TaskConfig, i_taskBranch, form.TaskResult, form.TaskBrn, form.TaskDiff, form.TaskPost,
-				form.TaskDir, form.TaskPreBuild); err != nil {
+				form.TaskDir, form.TaskPreBuild, hdr["TaskaddPsFormer"].([]string)); err != nil {
 				this.printSomethinWrong(c, 500, fmt.Sprintf("DataBase error %s\n", err.Error()))
 				return
 			} else {

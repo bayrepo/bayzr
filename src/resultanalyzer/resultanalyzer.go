@@ -227,8 +227,10 @@ func (this *ResultAnalyzerConatiner) ParseResultOfCommand(cmd_in string, config 
 
 		for scanner_out.Scan() {
 			fmt.Println(scanner_out.Text())
-			this.makeGarbageList(scanner_out.Text())
-			this.makeStringAnalysis(scanner_out.Text())
+			if this.chk.GetType() != "3" {
+				this.makeGarbageList(scanner_out.Text())
+				this.makeStringAnalysis(scanner_out.Text())
+			}
 		}
 		if config.GetStdError() == true {
 			if err = scanner_out.Err(); err != nil {

@@ -67,6 +67,30 @@
 			return false;
 			});
 			});
+			
+			$(function()
+			{
+			$(document).on('click', '.btn-add1', function(e)
+			{
+			e.preventDefault();
+
+			var controlForm = $('.controls1:first'),
+			currentEntry = $(this).parents('.entry:first'),
+			newEntry = $(currentEntry.clone()).appendTo(controlForm);
+
+			newEntry.find('input').val('');
+			controlForm.find('.entry:not(:last) .btn-add1')
+			.removeClass('btn-add').addClass('btn-remove1')
+			.removeClass('btn-success').addClass('btn-danger')
+			.html('<span class="glyphicon glyphicon-minus"></span>');
+			}).on('click', '.btn-remove1', function(e)
+			{
+			$(this).parents('.entry:first').remove();
+
+			e.preventDefault();
+			return false;
+			});
+			});
 		</script>
 
 		<nav class="navbar navbar-default" role="navigation">
@@ -203,6 +227,19 @@
 						<div class="form-group">
 							<label for="TaskPreBuild">Команды выполняемые перед аналитикой от root</label>
 							<textarea class="form-control" rows="6" id="TaskPreBuild" name="TaskPreBuild">{{.TaskPreBuild}}</textarea>
+						</div>
+						<div class="form-group">
+							<label for="TaskaddPs">Дополнительные параметры(covProjectName, covToken, covProjectID, covProjectPasswd)</label>
+							<div class="controls1">
+								<div class="entry input-group col-xs-3">
+									<input class="form-control" id="TaskaddPs" name="TaskaddPs" type="text" />
+									<span class="input-group-btn">
+										<button class="btn btn-success btn-add1" type="button">
+											<span class="glyphicon glyphicon-plus"></span>
+										</button>
+									</span>
+								</div>
+							</div>
 						</div>
 						<button type="submit" class="btn btn-default">Отправить</button>
 					</form>

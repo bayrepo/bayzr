@@ -325,6 +325,45 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 			return err
 		}
 	}
+
+	fnd, err = this._checkTable("bayzr_coverity")
+	if err != nil {
+		return err
+	}
+	if fnd == false {
+		if err := this._executeSQLCpammnd(
+			`CREATE TABLE IF NOT EXISTS bayzr_coverity(
+		        id INTEGER  NOT NULL AUTO_INCREMENT,
+		        job_id INTEGER NOT NULL, 
+		        version VARCHAR(255) DEFAULT "",
+		        status char,
+		        url VARCHAR(1024) DEFAULT "",
+		        PRIMARY KEY (id),
+		        INDEX bayzr_coverity_status_I (status),
+                INDEX bayzr_coverity_version_I (version(20)),
+                INDEX bayzr_coverity_job_id_I (job_id))`); err != nil {
+			return err
+		}
+	}
+
+	fnd, err = this._checkTable("bayzr_task_addinfo")
+	if err != nil {
+		return err
+	}
+	if fnd == false {
+		if err := this._executeSQLCpammnd(
+			`CREATE TABLE IF NOT EXISTS bayzr_task_addinfo(
+		        id INTEGER  NOT NULL AUTO_INCREMENT,
+		        task_id INTEGER NOT NULL, 
+		        pName VARCHAR(255) DEFAULT "",
+		        pValue VARCHAR(255) DEFAULT "",
+		        PRIMARY KEY (id),
+                INDEX bayzr_task_addinfo_pname_I (pName(20)),
+                INDEX bayzr_task_addinfo_task_id_I (task_id))`); err != nil {
+			return err
+		}
+	}
+
 	if should_add_admin == true {
 		res, err := this.db.Exec(`INSERT INTO bayzr_RULE(name, 
                                         description) VALUES('ru_admin', 'Admin permissions(Can do anything)')`)
@@ -908,9 +947,47 @@ func (this *MySQLSaver) GetPackages() (error, []string) {
 	return err, result_prc
 }
 
+func (this *MySQLSaver) GetAddParams(id int) (error, []string) {
+	result := []string{}
+	stmtOut, err := this.db.Prepare(`select CONCAT(pName, ":", pValue) from bayzr_task_addinfo where task_id = ?`)
+	if err != nil {
+		return err, result
+	}
+	defer stmtOut.Close()
+	rows, err := stmtOut.Query(id)
+	if err != nil && err != sql.ErrNoRows {
+		return err, result
+	}
+	for rows.Next() {
+		var param_list string
+		if err := rows.Scan(&param_list); err != nil {
+			return err, []string{}
+		}
+		result = append(result, param_list)
+	}
+	result_prc := []string{}
+	for _, val := range result {
+		if strings.Trim(val, " ") == "" {
+			continue
+		}
+		fnd := false
+		for _, val_2 := range result_prc {
+			if strings.Trim(val, " ") == val_2 {
+				fnd = true
+				break
+			}
+		}
+		if fnd == false {
+			result_prc = append(result_prc, strings.Trim(val, " "))
+		}
+	}
+	sort.Strings(result_prc)
+	return err, result
+}
+
 func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git string, new_pkgs []string,
 	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int, repname string, brn string,
-	diff string, post_cmd []string, dir_to_execute string, pre_build_cmd []string) (error, int) {
+	diff string, post_cmd []string, dir_to_execute string, pre_build_cmd []string, addParam []string) (error, int) {
 	var id int64 = 0
 	if this.ok == 1 {
 		task_type := Ttype
@@ -959,6 +1036,16 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 			return err, 0
 		}
 
+		if len(addParam) > 0 {
+			for _, val := range addParam {
+				param := strings.Split(val, ":")
+				if len(param) == 2 {
+					_, _ = this.db.Exec(`INSERT INTO bayzr_task_addinfo(task_id, pName, pValue) 
+                                        VALUES(?, ?, ?)`, id, param[0], param[1])
+				}
+			}
+		}
+
 	}
 
 	return nil, int(id)
@@ -967,7 +1054,7 @@ func (this *MySQLSaver) SaveTask(owner_id int, name string, Ttype string, git st
 
 func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype string, git string, new_pkgs []string,
 	old_pkgs []string, cmds []string, Ptype string, period string, users []string, cfg []string, use_branch int, repname string,
-	brn string, diff string, post_cmd []string, dir_to_execute string, pre_build_cmd []string) error {
+	brn string, diff string, post_cmd []string, dir_to_execute string, pre_build_cmd []string, addParam []string) error {
 	if this.ok == 1 {
 		task_type := Ttype[0]
 		pkgs_list := ""
@@ -1006,6 +1093,18 @@ func (this *MySQLSaver) UpdateTask(id int, owner_id int, name string, Ttype stri
 			strings.Join(pre_build_cmd, "\n"), id)
 		if err2 != nil {
 			return err2
+		}
+
+		_, _ = this.db.Exec(`DELETE FROM bayzr_task_addinfo WHERE task_id = ?`, id)
+
+		if len(addParam) > 0 {
+			for _, val := range addParam {
+				param := strings.Split(val, ":")
+				if len(param) == 2 {
+					_, _ = this.db.Exec(`INSERT INTO bayzr_task_addinfo(task_id, pName, pValue) 
+                                        VALUES(?, ?, ?)`, id, param[0], param[1])
+				}
+			}
 		}
 
 	}
@@ -1144,7 +1243,7 @@ func (this *MySQLSaver) InsertJob(owner_id int, name string, commit string, prio
 	return nil, int(id)
 }
 
-func (this *MySQLSaver) InsertJobParam(job_id int, name string, value string) (error) {
+func (this *MySQLSaver) InsertJobParam(job_id int, name string, value string) error {
 	if this.ok == 1 {
 
 		_, err2 := this.db.Exec(`INSERT INTO bayzr_JOBADDP(job_id, name, value) 
@@ -1172,8 +1271,8 @@ func (this *MySQLSaver) getJobAddParams(job_id int) (error, [][]string) {
 	}
 	for rows.Next() {
 		var (
-			t1_name     string
-			t1_value    string
+			t1_name  string
+			t1_value string
 		)
 		if err := rows.Scan(&t1_name, &t1_value); err != nil {
 			return err, [][]string{}
@@ -1192,8 +1291,9 @@ func (this *MySQLSaver) GetJobs(page int) (error, [][]string, int) {
 	}
 	page = page * 20
 	stmtOut, err := this.db.Prepare(`select t1.id, t1.job_name, t1.commit, ifnull(t1.build_date_start,""), ifnull(t1.build_date_end,""),
-	ifnull(t1.build_id,0), t1.priority, t2.name, ifnull(t3.name, "NO TASK"), t1.descr, t1.state from bayzr_JOBS as t1 
-	join bayzr_USER as t2 on t1.user_id = t2.id left join bayzr_TASK as t3 on t3.id = t1.task_id order by t1.id desc limit 20 offset ?`)
+	ifnull(t1.build_id,0), t1.priority, t2.name, ifnull(t3.name, "NO TASK"), t1.descr, t1.state, ifnull(t4.url,"") from bayzr_JOBS as t1 
+	join bayzr_USER as t2 on t1.user_id = t2.id left join bayzr_TASK as t3 on t3.id = t1.task_id left join bayzr_coverity as t4 on t4.job_id = t1,id 
+	order by t1.id desc limit 20 offset ?`)
 	if err != nil {
 		return err, result, 1
 	}
@@ -1215,13 +1315,14 @@ func (this *MySQLSaver) GetJobs(page int) (error, [][]string, int) {
 			t3_task_name        string
 			t1_descr            string
 			t1_state            string
+			t4_url              string
 		)
 		if err := rows.Scan(&t1_id, &t1_job_name, &t1_commit, &t1_build_date_start, &t1_build_date_end,
-			&t1_build_id, &t1_priority, &t2_user_name, &t3_task_name, &t1_descr, &t1_state); err != nil {
+			&t1_build_id, &t1_priority, &t2_user_name, &t3_task_name, &t1_descr, &t1_state, &t4_url); err != nil {
 			return err, [][]string{}, 1
 		}
 		result = append(result, []string{fmt.Sprintf("%d", t1_id), t1_job_name, t1_commit, t1_build_date_start, t1_build_date_end,
-			t1_build_id, t1_priority, t2_user_name, t3_task_name, t1_descr, t1_state})
+			t1_build_id, t1_priority, t2_user_name, t3_task_name, t1_descr, t1_state, t4_url})
 	}
 
 	stmtOut, err = this.db.Prepare(`select count(*) from bayzr_JOBS as t1 
@@ -1715,7 +1816,7 @@ func (this *MySQLSaver) _executeSQLCpammndWithParam(value int, cmd string) error
 	return nil
 }
 
-func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, int, int ,int, int) {
+func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, int, int, int, int) {
 	var outputDel int = 0
 	var reportDel int = 0
 	var errorDel int = 0
@@ -1736,7 +1837,7 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	if err != nil {
 		return err, 0, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
-	
+
 	err, reportDel = this._executeOneResult(days, "select count(*) from bayzr_err_extend_file where build_number in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
@@ -1746,7 +1847,7 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	if err != nil {
 		return err, outputDel, 0, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
-	
+
 	err, errorDel = this._executeOneResult(days, "select count(*) from bayzr_err_list where build_number in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
@@ -1765,8 +1866,8 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	err = this._executeSQLCpammndWithParam(days, "delete from bayzr_build_info where id in (select ifnull(build_id,0) as f1 from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24)) and ifnull(build_id,0)>0)")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, 0, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
-	}	
-	
+	}
+
 	err, jobDel = this._executeOneResult(days, "select count(*) from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24))")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
@@ -1775,8 +1876,8 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	err = this._executeSQLCpammndWithParam(days, "delete from bayzr_JOBS where UNIX_TIMESTAMP(create_date_start)<(UNIX_TIMESTAMP(CURRENT_TIMESTAMP())-(?*60*60*24))")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, 0, emptyRep, emptyErr, emptyBld, emptyOtp
-	}	
-	
+	}
+
 	err, emptyErr = this._executeOneResultNoParams("select count(*) from bayzr_err_list where build_number in (select id from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null))")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
@@ -1785,8 +1886,8 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	err = this._executeSQLCpammnd("delete from bayzr_err_list where build_number in (select id from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null))")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, 0, emptyBld, emptyOtp
-	}	
-	
+	}
+
 	err, emptyRep = this._executeOneResultNoParams("select count(*) from bayzr_err_extend_file where build_number in (select id from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null))")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
@@ -1795,8 +1896,8 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	err = this._executeSQLCpammnd("delete from bayzr_err_extend_file where build_number in (select id from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null))")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, 0, emptyErr, emptyBld, emptyOtp
-	}	
-	
+	}
+
 	err, emptyBld = this._executeOneResultNoParams("select count(*) from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null)")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
@@ -1805,8 +1906,8 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	err = this._executeSQLCpammnd("delete from bayzr_build_info where completed = 1 and id not in (select distinct build_id from bayzr_JOBS where build_id is not null)")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, 0, emptyOtp
-	}	
-	
+	}
+
 	err, emptyOtp = this._executeOneResultNoParams("select count(*) from bayzr_OUTPUT where job_id is not null and job_id not in (select id from bayzr_JOBS group by id)")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
@@ -1815,13 +1916,13 @@ func (this *MySQLSaver) CleanMySQL(days int) (error, int, int, int, int, int, in
 	err = this._executeSQLCpammnd("delete from bayzr_OUTPUT where job_id is not null and job_id not in (select id from bayzr_JOBS group by id)")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, 0
-	}	
-	
+	}
+
 	err = this._executeSQLCpammnd("OPTIMIZE TABLE bayzr_OUTPUT, bayzr_JOBS, bayzr_build_info, bayzr_err_extend_file, bayzr_err_list")
 	if err != nil {
 		return err, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 	}
-	
+
 	return nil, outputDel, reportDel, errorDel, buildDel, jobDel, emptyRep, emptyErr, emptyBld, emptyOtp
 }
 
@@ -1836,4 +1937,27 @@ func (this *MySQLSaver) UpdateJobState(id int, state int) error {
 	}
 
 	return nil
+}
+
+func (this *MySQLSaver) CreateCoverityBuild(id int) (error, int) {
+	if this.ok == 1 {
+
+		res, err2 := this.db.Exec(`insert bayzr_coverity(job_id, version, status, url) select t1.id, 
+		CONCAT(t2.name, ".",  CAST(t1.id as CHAR(20))),'P', '' from bayzr_JOBS as t1 join bayzr_TASK as t2 
+		on t1.task_id = t2.id join bayzr_task_addinfo as t3 on t3.task_id = t2.id where t1.id = ? 
+		and t3.pName='covProjectName';`, id)
+		if err2 != nil {
+			return err2
+		}
+
+		id_res, err := res.LastInsertId()
+		if err != nil {
+			return err, 0
+		}
+
+		return nil, id_res
+
+	}
+
+	return nil, 0
 }
