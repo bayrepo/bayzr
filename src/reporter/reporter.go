@@ -490,7 +490,7 @@ func makeMixedArray2(this *ReporterContainer, wrap int64) *[]MixedListItem2 {
 			}
 
 			item := MixedListItem2{plugin_name, position, message.File, message, getDangerLevel(value.GetListPlugin().GetResultLevels(message.Sev)), 0}
-			list[key].List = append(list[key].List, item)
+			list = append(list, item)
 
 		}
 
@@ -644,7 +644,7 @@ func (this *ReporterContainer) saveAnalyzisInfo2(file_name string, wrap_strings 
 				if err_str >= 0 {
 					if fnd_prev == false {
 						item_res = &ReporterContainerItem{}
-						item_res.Start_pos = cnt
+						item_res.Start_pos = counter
 						item_res.End_pos = -1
 						item_res.File = fn
 						this.err_list = append(this.err_list, item_res)
