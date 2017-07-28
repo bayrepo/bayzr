@@ -207,7 +207,7 @@ func (this *ReporterContainer) saveAnalyzisDB() {
 				}
 
 				if quickCommentAnalysis(message.File, message.Line) == true {
-				    err_tp := getDangerLevel(value.GetListPlugin().GetResultLevels(message.Sev))
+					err_tp := getDangerLevel(value.GetListPlugin().GetResultLevels(message.Sev))
 					err := this.mysqldriver.InsertInfo(plugin_name, message.Id, message.File,
 						message.Line, message.Message, err_tp)
 					if err != nil {
@@ -443,6 +443,64 @@ func makeMixedArray(this *ReporterContainer, wrap int64) *[]MixedList {
 	return &list
 }
 
+type MixedListItem2 struct {
+	Plugin_name string
+	Postion     int64
+	FileName    string
+	Item        *resultanalyzer.ResultAnalyzerConatinerItem
+	level       int
+	used        int
+}
+
+type tMixedListItem2 []MixedListItem2
+
+func (this tMixedListItem2) Len() int {
+	return len(this)
+}
+
+func (this tMixedListItem2) Less(i, j int) bool {
+	if this[i].FileName < this[j].FileName {
+		return true
+	}
+	if this[i].FileName > this[j].FileName {
+		return false
+	}
+	return this[i].Postion < this[j].Postion
+}
+
+func (this tMixedListItem2) Swap(i, j int) {
+	this[i], this[j] = this[j], this[i]
+}
+
+func makeMixedArray2(this *ReporterContainer, wrap int64) *[]MixedListItem2 {
+	list := []MixedListItem2{}
+	for _, value := range *this.list {
+		array_list, plugin_name := value.GetListOfErrors()
+		for _, message := range array_list {
+			position, err := strconv.ParseInt(message.Line, 10, 64)
+			if err != nil {
+				fmt.Printf("Incorrect line number %s in file %s for message %s\n", message.Line, message.File, message.Message)
+				continue
+			}
+			if this.config.CheckFile(message.File) == false {
+				continue
+			}
+			if this.config.CheckFileLine(message.File, message.Line) == false {
+				continue
+			}
+
+			item := MixedListItem2{plugin_name, position, message.File, message, getDangerLevel(value.GetListPlugin().GetResultLevels(message.Sev)), 0}
+			list[key].List = append(list[key].List, item)
+
+		}
+
+	}
+
+	sort.Sort(tMixedListItem2(list))
+
+	return &list
+}
+
 func makeListOfFiles(this *ReporterContainer) []string {
 	list := map[string]int64{}
 	for _, value := range *this.list {
@@ -524,6 +582,37 @@ func (this *ReporterContainer) makeAddErrorInfo(lst []string, wrap_strings int64
 	return list
 }
 
+func findNextNearElem(list *[]MixedListItem2, pos int) int64 {
+	if (pos + 1) >= len(*list) {
+		return -1
+	}
+	for i := pos + 1; i < len(*list); i++ {
+		if (*list)[i].FileName == (*list)[pos].FileName {
+			return (*list)[i].Postion - (*list)[pos].Postion
+		}
+	}
+	return -1
+}
+
+func isStringNearTheCounter(list *[]MixedListItem2, cnt int64, fileName string, wrap_strings int64) int {
+	for pos, val := range *list {
+		if (val.FileName == fileName) &&
+			(cnt >= (val.Postion - wrap_strings)) && (cnt <= val.Postion) && (val.used == 0) {
+			return pos
+		}
+		if val.FileName == fileName &&
+			(cnt < (val.Postion + wrap_strings)) && (cnt > val.Postion) {
+			fnd := findNextNearElem(list, pos)
+			if (fnd >= 0) && (fnd <= wrap_strings) {
+				continue
+			} else {
+				return pos
+			}
+		}
+	}
+	return -1
+}
+
 func (this *ReporterContainer) saveAnalyzisInfo2(file_name string, wrap_strings int64) {
 	file, err := os.Create(file_name)
 	if err != nil {
@@ -531,7 +620,8 @@ func (this *ReporterContainer) saveAnalyzisInfo2(file_name string, wrap_strings 
 		os.Exit(1)
 	}
 	defer file.Close()
-	
+
+	list := makeMixedArray2(this, wrap_strings)
 	list_of_files := makeListOfFiles(this)
 	for _, fn := range list_of_files {
 		file_source, err := os.Open(fn)
@@ -543,66 +633,66 @@ func (this *ReporterContainer) saveAnalyzisInfo2(file_name string, wrap_strings 
 		reader := bufio.NewReader(file_source)
 		counter := int64(1)
 
+		fnd_prev := false
 		mark_val := false
 
 		var item_res *ReporterContainerItem = nil
 		for {
 			line, err := reader.ReadString('\n')
 			if (line != "") || (line == "" && err == nil) {
-				for _, items := range *list {
-					if len(items.List) > 0 {
-						if items.List[0].Item.File == fn && counter >= items.From && counter <= items.To {
-							item_res = nil
-							for i := range this.err_list {
-								if this.err_list[i].File == fn && this.err_list[i].Start_pos == items.From && this.err_list[i].End_pos == items.To {
-									item_res = this.err_list[i]
-								}
-							}
-							if item_res == nil {
-								item_res = &ReporterContainerItem{}
-								item_res.Start_pos = items.From
-								item_res.End_pos = items.To
-								item_res.File = fn
-								this.err_list = append(this.err_list, item_res)
-							}
-							fnd_str := false
-							for _, items_val := range items.List {
-								if items_val.Postion == counter {
-									obj := ReporterContainerLineItem{}
-									obj.Number = items_val.Postion
-									obj.Plugin = items_val.Plugin_name
-									obj.Value = items_val.level
-									obj.Line = items_val.Item.Message
-									obj.Link = this.makeAddErrorInfo(items_val.Item.Pos_link_file_line, wrap_strings)
-									item_res.List_strings = append(item_res.List_strings, obj)
-									fnd_str = true
-								}
-							}
-							if fnd_str == true || mark_val == true {
-								obj := ReporterContainerLineItem{}
-								obj.Number = counter
-								obj.Plugin = ""
-								if mark_val == true {
-									obj.Value = ERRLINE_CONT
-								} else {
-									obj.Value = ERRLINE
-								}
-								obj.Line = line
-								item_res.List_strings = append(item_res.List_strings, obj)
-								if isEndOfStringC(line) == true {
-									mark_val = false
-								} else {
-									mark_val = true
-								}
-							} else {
-								obj := ReporterContainerLineItem{}
-								obj.Number = counter
-								obj.Plugin = ""
-								obj.Value = LINE
-								obj.Line = line
-								item_res.List_strings = append(item_res.List_strings, obj)
-							}
+				err_str := isStringNearTheCounter(list, counter, fn, wrap_strings)
+				if err_str >= 0 {
+					if fnd_prev == false {
+						item_res = &ReporterContainerItem{}
+						item_res.Start_pos = cnt
+						item_res.End_pos = -1
+						item_res.File = fn
+						this.err_list = append(this.err_list, item_res)
+					}
+					fnd_str := false
+					if (*list)[err_str].Postion == counter {
+						items_val := (*list)[err_str]
+						obj := ReporterContainerLineItem{}
+						obj.Number = items_val.Postion
+						obj.Plugin = items_val.Plugin_name
+						obj.Value = items_val.level
+						obj.Line = items_val.Item.Message
+						obj.Link = this.makeAddErrorInfo(items_val.Item.Pos_link_file_line, wrap_strings)
+						item_res.List_strings = append(item_res.List_strings, obj)
+						fnd_str = true
+					}
+					if fnd_str == true || mark_val == true {
+						obj := ReporterContainerLineItem{}
+						obj.Number = counter
+						obj.Plugin = ""
+						if mark_val == true {
+							obj.Value = ERRLINE_CONT
+						} else {
+							obj.Value = ERRLINE
 						}
+						obj.Line = line
+						item_res.List_strings = append(item_res.List_strings, obj)
+						if isEndOfStringC(line) == true {
+							mark_val = false
+						} else {
+							mark_val = true
+						}
+					} else {
+						obj := ReporterContainerLineItem{}
+						obj.Number = counter
+						obj.Plugin = ""
+						obj.Value = LINE
+						obj.Line = line
+						item_res.List_strings = append(item_res.List_strings, obj)
+					}
+					fnd_prev = true
+				} else {
+					if fnd_prev == true && item_res != nil {
+						if item_res.End_pos < 0 {
+							item_res.End_pos = counter - 1
+						}
+						fnd_prev = false
+						mark_val = false
 					}
 				}
 			}
@@ -752,12 +842,12 @@ func (this *ReporterContainer) saveAnalyzisInfoDirectToDB() {
 		for _, list := range this.err_list_files[file_nm] {
 			for _, value := range list.List_strings {
 				if value.Value <= DANGER {
-				    err_val:=0
-				    if value.Value==WARNING {
-				        err_val = 1
-				    } else if value.Value==DANGER {
-				        err_val = 2
-				    }
+					err_val := 0
+					if value.Value == WARNING {
+						err_val = 1
+					} else if value.Value == DANGER {
+						err_val = 2
+					}
 					err := this.mysqldriver.InsertExtInfo(value.Plugin, file_nm, "", 1, err_val, value.Line, 0)
 					if err != nil {
 						fmt.Printf("Error of saving to database %s", err)
