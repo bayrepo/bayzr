@@ -147,6 +147,29 @@ func (this *CiExec) Exc(args []string) error {
 	return fmt.Errorf("empty compile command\n")
 }
 
+func copyFileContents(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
+}
+
 func (this *CiExec) Run(id int, conf string) error {
 	this.ci_id = id
 	err := this.readConfig(conf)
@@ -221,6 +244,8 @@ func (this *CiExec) Run(id int, conf string) error {
 		this.MakeFakeOuptut("Error: " + err.Error())
 		return err
 	}
+	ci_id_unchange := this.ci_id
+	chroot_dir_unchange := dir
 
 	defer func() {
 		this.MakeFakeOuptut("+++: Back to real root")
@@ -233,6 +258,11 @@ func (this *CiExec) Run(id int, conf string) error {
 		if err2 != nil {
 			this.MakeFakeOuptut("Error: " + err2.Error())
 			return
+		}
+		arch_path := fmt.Sprintf("%s/home/checker/%d.tar.gz", chroot_dir_unchange, ci_id_unchange)
+		dst_path := fmt.Sprintf("/usr/share/citool/%d.tar.gz", ci_id_unchange)
+		if _, err_p := os.Stat(arch_path); !os.IsNotExist(err_p) {
+			copyFileContents(arch_path, dst_path)
 		}
 	}()
 

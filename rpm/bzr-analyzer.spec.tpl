@@ -107,6 +107,7 @@ mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/system/
 mkdir -p $RPM_BUILD_ROOT/usr/share/bzr.cron/
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/cron.d
 mkdir -p $RPM_BUILD_ROOT/var/log/citool
+mkdir -p $RPM_BUILD_ROOT/usr/share/citool
 install -D -p -m 755 bin/citool %{buildroot}%{_sbindir}
 install -D -p -m 600 cisetup/cfg/citool.ini %{buildroot}%{_sysconfdir}
 install -D -p -m 644 cisetup/cfg/citool.service %{buildroot}/usr/lib/systemd/system/
@@ -138,6 +139,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/bzr.cron/bayzr_clean_orph_environ.sh
 %config(noreplace) %{_sysconfdir}/cron.d/bayzr_citool-cron
 %dir /var/log/citool
+%attr(600, checker, checker) %dir /var/share/citool
 %endif
 
 %files

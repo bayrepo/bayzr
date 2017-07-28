@@ -933,7 +933,7 @@ func (this *ReporterContainer) CreateReport() (string, bool) {
 		this.saveAnalyzisInfoDirect(report_file, report_template)
 		return "", false
 	case report_type == "html" || report_type == "txt":
-		this.saveAnalyzisInfo(report_file, report_number)
+		this.saveAnalyzisInfo2(report_file, report_number)
 		this.saveAnalyzisInfoDirectToDB()
 		if report_type == "txt" {
 			this.saveAnalyzisInfoDirectTxt(report_file)
