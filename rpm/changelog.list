@@ -1,3 +1,6 @@
+* Sat Jul 29 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-25
+- Added coverity like builder
+
 * Wed Jun 14 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-24
 - Added build_id before post script
 
