@@ -338,6 +338,7 @@ func (this *MySQLSaver) _checkAndCreateTables() error {
 		        version VARCHAR(255) DEFAULT "",
 		        status char,
 		        url VARCHAR(1024) DEFAULT "",
+		        project_path VARCHAR(4096),
 		        PRIMARY KEY (id),
 		        INDEX bayzr_coverity_status_I (status),
                 INDEX bayzr_coverity_version_I (version(20)),
@@ -1292,7 +1293,7 @@ func (this *MySQLSaver) GetJobs(page int) (error, [][]string, int) {
 	page = page * 20
 	stmtOut, err := this.db.Prepare(`select t1.id, t1.job_name, t1.commit, ifnull(t1.build_date_start,""), ifnull(t1.build_date_end,""),
 	ifnull(t1.build_id,0), t1.priority, t2.name, ifnull(t3.name, "NO TASK"), t1.descr, t1.state, ifnull(t4.url,"") from bayzr_JOBS as t1 
-	join bayzr_USER as t2 on t1.user_id = t2.id left join bayzr_TASK as t3 on t3.id = t1.task_id left join bayzr_coverity as t4 on t4.job_id = t1,id 
+	join bayzr_USER as t2 on t1.user_id = t2.id left join bayzr_TASK as t3 on t3.id = t1.task_id left join bayzr_coverity as t4 on t4.job_id = t1.id 
 	order by t1.id desc limit 20 offset ?`)
 	if err != nil {
 		return err, result, 1
@@ -1939,15 +1940,15 @@ func (this *MySQLSaver) UpdateJobState(id int, state int) error {
 	return nil
 }
 
-func (this *MySQLSaver) CreateCoverityBuild(id int) (error, int) {
+func (this *MySQLSaver) CreateCoverityBuild(id int, path string) (error, int64) {
 	if this.ok == 1 {
 
-		res, err2 := this.db.Exec(`insert bayzr_coverity(job_id, version, status, url) select t1.id, 
-		CONCAT(t2.name, ".",  CAST(t1.id as CHAR(20))),'P', '' from bayzr_JOBS as t1 join bayzr_TASK as t2 
+		res, err2 := this.db.Exec(`insert bayzr_coverity(job_id, version, status, url, project_path) select t1.id, 
+		CONCAT(t2.name, ".",  CAST(t1.id as CHAR(20))),'P', '', ? from bayzr_JOBS as t1 join bayzr_TASK as t2 
 		on t1.task_id = t2.id join bayzr_task_addinfo as t3 on t3.task_id = t2.id where t1.id = ? 
-		and t3.pName='covProjectName';`, id)
+		and t3.pName='covProjectName'`, path, id)
 		if err2 != nil {
-			return err2
+			return err2, 0
 		}
 
 		id_res, err := res.LastInsertId()

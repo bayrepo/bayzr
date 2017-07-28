@@ -455,15 +455,15 @@ connecturl=%s
 			return err
 		}
 	}
-	
-	bld_err, cov_id := this.con.CreateCurrentBuild(this.ci_id)
+
+	bld_err, cov_id := this.con.CreateCoverityBuild(this.ci_id, origin_catalog)
 	if bld_err != nil {
 		this.con.UpdateJobState(this.ci_id, 1)
 		this.MakeFakeOuptut("Error: " + bld_err.Error())
 		return err
 	}
-	if cov_id>0 {
-	    err = this.Exc([]string{"/usr/bin/tar", "zcf", fmt.Sprintf("/home/checker/%d.tar.gz", this.ci_id), origin_catalog})
+	if cov_id > 0 {
+		err = this.Exc([]string{"/usr/bin/tar", "zcf", fmt.Sprintf("/home/checker/%d.tar.gz", this.ci_id), origin_catalog})
 		if err != nil {
 			this.con.UpdateJobState(this.ci_id, 1)
 			this.MakeFakeOuptut("Error: " + err.Error())
@@ -513,15 +513,17 @@ connecturl=%s
 		}
 	}
 
-	this.MakeFakeOuptut("+++: Save result to " + taskInfo["result_file"])
-	if _, err := os.Stat(taskInfo["result_file"]); err == nil {
-		if err := this.con.InsertExtInfoFromResult(taskInfo["result_file"], taskInfo["task_name"]+"."+taskInfo["id"]); err != nil {
-			this.con.UpdateJobState(this.ci_id, 1)
-			this.MakeFakeOuptut("Error: " + err.Error())
-			return err
+	if cov_id == 0 {
+		this.MakeFakeOuptut("+++: Save result to " + taskInfo["result_file"])
+		if _, err := os.Stat(taskInfo["result_file"]); err == nil {
+			if err := this.con.InsertExtInfoFromResult(taskInfo["result_file"], taskInfo["task_name"]+"."+taskInfo["id"]); err != nil {
+				this.con.UpdateJobState(this.ci_id, 1)
+				this.MakeFakeOuptut("Error: " + err.Error())
+				return err
+			}
+		} else {
+			this.MakeFakeOuptut("Error: " + taskInfo["result_file"] + " not found")
 		}
-	} else {
-		this.MakeFakeOuptut("Error: " + taskInfo["result_file"] + " not found")
 	}
 
 	sonar_tp := task_type

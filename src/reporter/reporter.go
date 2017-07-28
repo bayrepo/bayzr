@@ -524,6 +524,99 @@ func (this *ReporterContainer) makeAddErrorInfo(lst []string, wrap_strings int64
 	return list
 }
 
+func (this *ReporterContainer) saveAnalyzisInfo2(file_name string, wrap_strings int64) {
+	file, err := os.Create(file_name)
+	if err != nil {
+		fmt.Printf("Can't create file %s: %s", file_name, err)
+		os.Exit(1)
+	}
+	defer file.Close()
+	
+	list_of_files := makeListOfFiles(this)
+	for _, fn := range list_of_files {
+		file_source, err := os.Open(fn)
+		if err != nil {
+			fmt.Printf("Can't open file %s\n", fn)
+			continue
+		}
+		defer file_source.Close()
+		reader := bufio.NewReader(file_source)
+		counter := int64(1)
+
+		mark_val := false
+
+		var item_res *ReporterContainerItem = nil
+		for {
+			line, err := reader.ReadString('\n')
+			if (line != "") || (line == "" && err == nil) {
+				for _, items := range *list {
+					if len(items.List) > 0 {
+						if items.List[0].Item.File == fn && counter >= items.From && counter <= items.To {
+							item_res = nil
+							for i := range this.err_list {
+								if this.err_list[i].File == fn && this.err_list[i].Start_pos == items.From && this.err_list[i].End_pos == items.To {
+									item_res = this.err_list[i]
+								}
+							}
+							if item_res == nil {
+								item_res = &ReporterContainerItem{}
+								item_res.Start_pos = items.From
+								item_res.End_pos = items.To
+								item_res.File = fn
+								this.err_list = append(this.err_list, item_res)
+							}
+							fnd_str := false
+							for _, items_val := range items.List {
+								if items_val.Postion == counter {
+									obj := ReporterContainerLineItem{}
+									obj.Number = items_val.Postion
+									obj.Plugin = items_val.Plugin_name
+									obj.Value = items_val.level
+									obj.Line = items_val.Item.Message
+									obj.Link = this.makeAddErrorInfo(items_val.Item.Pos_link_file_line, wrap_strings)
+									item_res.List_strings = append(item_res.List_strings, obj)
+									fnd_str = true
+								}
+							}
+							if fnd_str == true || mark_val == true {
+								obj := ReporterContainerLineItem{}
+								obj.Number = counter
+								obj.Plugin = ""
+								if mark_val == true {
+									obj.Value = ERRLINE_CONT
+								} else {
+									obj.Value = ERRLINE
+								}
+								obj.Line = line
+								item_res.List_strings = append(item_res.List_strings, obj)
+								if isEndOfStringC(line) == true {
+									mark_val = false
+								} else {
+									mark_val = true
+								}
+							} else {
+								obj := ReporterContainerLineItem{}
+								obj.Number = counter
+								obj.Plugin = ""
+								obj.Value = LINE
+								obj.Line = line
+								item_res.List_strings = append(item_res.List_strings, obj)
+							}
+						}
+					}
+				}
+			}
+			if err != nil {
+				if err != io.EOF {
+					fmt.Printf("Read %s file error: %s\n", fn, err)
+				}
+				break
+			}
+			counter++
+		}
+	}
+}
+
 func (this *ReporterContainer) saveAnalyzisInfo(file_name string, wrap_strings int64) {
 	file, err := os.Create(file_name)
 	if err != nil {
