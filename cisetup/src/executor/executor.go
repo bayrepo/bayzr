@@ -104,7 +104,7 @@ func (this *CiExec) Exc(args []string) error {
 		env := os.Environ()
 		env = append(env, fmt.Sprintf("INJAIL=yes"))
 		env = append(env, fmt.Sprintf("BUILDID=%s", this.build_id))
-		env = append(env, fmt.Sprintf("TASKID=%s", this.ci_id))
+		env = append(env, fmt.Sprintf("TASKID=%d", this.ci_id))
 		env = append(env, fmt.Sprintf("PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"))
 		cmd.Env = env
 
