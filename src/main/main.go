@@ -54,6 +54,7 @@ var printVisualMenu *bool
 var dryRun *bool
 var author string
 var build_info string
+var nobuildcommand *bool
 
 const (
 	config_file_name = "bzr.conf"
@@ -75,6 +76,7 @@ func init() {
 		defaultFileusage = "path to configuration file"
 	)
 	versionFlag = flag.Bool("version", false, "Print the version number.")
+	nobuildcommand = flag.Bool("no-build", false, "No need in build command calling.")
 	flag.StringVar(&configFile, "config", defaultFile, defaultFileusage)
 	listOfPlugins = flag.Bool("list", false, "Show list of available plugins")
 	useOnlyLocalFiles = flag.Bool("not-only-local", false, "Show in result errors not only for project files")
@@ -215,7 +217,7 @@ func main() {
 			if len(chk_lst) > 0 {
 				for _, file_name := range chk_lst {
 					if config.IsFileOrDirIgnored(file_name) == false {
-					    dr, _ := os.Getwd()
+						dr, _ := os.Getwd()
 						file_name = outputanalyzer.TransformFileName(file_name, dr)
 						if file_name == "" {
 							continue
@@ -250,9 +252,11 @@ func main() {
 	}
 
 	fmt.Println("--------------------Process of compillation is begun-----------------------------")
-	if err = analyzer.ExcecuteComplilationProcess(cmd_mod_); err != nil {
-		fmt.Println(err)
-		os.Exit(255)
+	if !*nobuildcommand {
+		if err = analyzer.ExcecuteComplilationProcess(cmd_mod_); err != nil {
+			fmt.Println(err)
+			os.Exit(255)
+		}
 	}
 
 	fmt.Println("--------------------Process of source analyzing is begun-----------------------------")
