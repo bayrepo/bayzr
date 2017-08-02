@@ -139,7 +139,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/bzr.cron/bayzr_clean_orph_environ.sh
 %config(noreplace) %{_sysconfdir}/cron.d/bayzr_citool-cron
 %dir /var/log/citool
-%attr(600, checker, checker) %dir /usr/share/citool
+%attr(755, checker, checker) %dir /usr/share/citool
 %endif
 
 %files
