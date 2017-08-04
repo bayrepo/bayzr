@@ -516,10 +516,10 @@ connecturl=%s
 			cmd := strings.Replace(cmd_macros, "{{CHECK}}",
 				fmt.Sprintf("/usr/bin/bayzr -debug-commands -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
 				1)
-			if strings.Contains(cmd_macros, "{{CHECK_CLEAR}}") {
+			if strings.Contains(cmd, "{{CHECK_CLEAR}}") {
 				check_fnd = true
 			}
-			cmd = strings.Replace(cmd_macros, "{{CHECK_CLEAR}}",
+			cmd = strings.Replace(cmd, "{{CHECK_CLEAR}}",
 				fmt.Sprintf("/usr/bin/bayzr -no-build -debug-commands -build-author %s -build-name \"%s.%s\" %s cmd ", taskInfo["login"], taskInfo["task_name"], taskInfo["id"], need_diff),
 				1)
 
