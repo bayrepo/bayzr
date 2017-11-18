@@ -926,16 +926,16 @@ func ShActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	err, _, _, _ = executeCommand(makeArgsFromString("wget https://github.com/koalaman/shellcheck/archive/v0.4.4.zip"))
+	err, _, _, _ = executeCommand(makeArgsFromString("wget https://github.com/koalaman/shellcheck/archive/v0.4.6.zip"))
 	if err != nil {
 		return err
 	}
-	err, _, _, _ = executeCommand(makeArgsFromString("unzip v0.4.4.zip"))
+	err, _, _, _ = executeCommand(makeArgsFromString("unzip v0.4.6.zip"))
 	if err != nil {
 		return err
 	}
 
-	os.Chdir("shellcheck-0.4.4")
+	os.Chdir("shellcheck-0.4.6")
 
 	/*data5, err := data.Asset("cisetup/src/data/shl.patch")
 	if err != nil {
