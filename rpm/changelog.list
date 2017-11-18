@@ -1,3 +1,6 @@
+* Sat Nov 18 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-26
+- setup procedure renew
+
 * Sat Jul 29 2017 Alexey Berezhok <bayrepo.info@gmail.com> 0.2-25
 - Added coverity like builder
 

@@ -158,7 +158,9 @@ func (this *SonarApi) InstallPlugin(plugin string, avail []string, installed []s
 			}
 		}
 		if is_avail == false {
-			return fmt.Errorf("Plugin does not exists %s", plugin)
+			//return 
+			fmt.Printf("Plugin does not exists %s", plugin)
+			return nil
 		}
 	} else {
 		is_avail := false

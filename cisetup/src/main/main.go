@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"logger"
 	"os"
 	"os/exec"
 	"runner"
@@ -18,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"logger"
 )
 
 var db_passwd = "sonarPASS1234"
@@ -78,6 +78,23 @@ func (this *ActionSaver) GetParam(name string) interface{} {
 	return nil
 }
 
+func yesOrNot(message string) int {
+	var response string
+	fmt.Println(message)
+	for {
+		_, err := fmt.Scanf("%s", &response)
+		if err != nil {
+			fmt.Println("Input error")
+			os.Exit(255)
+		}
+		formattedResponse := strings.ToLower(response)
+		if formattedResponse == "y" || formattedResponse == "yes" || formattedResponse == "Y" || formattedResponse == "Yes" {
+			return 1
+		}
+		return 0
+	}
+}
+
 func welcomeMessage() int {
 	var response string
 	fmt.Println("Welcome to management script of continue integration system")
@@ -99,6 +116,24 @@ func welcomeMessage() int {
 		result, err_fmt := strconv.Atoi(formattedResponse)
 		if err_fmt != nil || result < 1 || result > 3 {
 			fmt.Println("Answer should be 1/2/3 or q(quit) or e(exit) for next step")
+		} else {
+			return result
+		}
+	}
+}
+
+func welcomeMessageCont() int {
+	var response string
+	fmt.Println("Should I continue from stage 0-no:")
+	for {
+		_, err := fmt.Scanf("%s", &response)
+		if err != nil {
+			fmt.Println("Input error")
+			os.Exit(255)
+		}
+		result, err_fmt := strconv.Atoi(response)
+		if err_fmt != nil {
+			return 0
 		} else {
 			return result
 		}
@@ -424,13 +459,16 @@ func SonarActionInstall(parent interface{}) error {
 	fmt.Println("   1. SonarQube 6.0")
 	fmt.Println("   2. SonarQube 5.6")
 	fmt.Println("   3. SonarQube 6.4")
-	fmt.Println("Press 1 or 2 or 3")
+	fmt.Println("   4. SonarQube 6.7")
+	fmt.Println("Press 1 or 2 or 3 or 4")
 	sonar_ch := "1"
 	fmt.Scan(&sonar_ch)
 	if strings.Trim(sonar_ch, " \n\t") == "1" {
 		sonar_version = "6.0"
 	} else if strings.Trim(sonar_ch, " \n\t") == "3" {
 		sonar_version = "6.4"
+	} else if strings.Trim(sonar_ch, " \n\t") == "4" {
+		sonar_version = "6.7"
 	}
 	fmt.Println("Set password for sonarqube database:")
 	sonar_ch = "1"
@@ -438,11 +476,11 @@ func SonarActionInstall(parent interface{}) error {
 	db_passwd = strings.Trim(db_passwd, " \n\t")
 	this.SetParam(sonar_version, "sonar_version")
 
-	err, _, _, _ := executeCommand(makeArgsFromString("wget https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-2.6.1.zip"))
+	err, _, _, _ := executeCommand(makeArgsFromString("wget https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-2.8.zip"))
 	if err != nil {
 		return err
 	}
-	err, _, _, _ = executeCommand(makeArgsFromString("unzip sonar-scanner-2.6.1.zip"))
+	err, _, _, _ = executeCommand(makeArgsFromString("unzip sonar-scanner-2.8.zip"))
 	if err != nil {
 		return err
 	}
@@ -464,12 +502,12 @@ func SonarActionInstall(parent interface{}) error {
 		return err
 	}
 	this.SetParam("success", "sonar_ln")
-	err, _, _, _ = executeCommand(makeArgsFromString("mv -n sonar-scanner-2.6.1 /usr/local"))
+	err, _, _, _ = executeCommand(makeArgsFromString("mv -n sonar-scanner-2.8 /usr/local"))
 	if err != nil {
 		return err
 	}
 	this.SetParam("success", "sonarsc_mv")
-	err, _, _, _ = executeCommand(makeArgsFromString("ln -s /usr/local/sonar-scanner-2.6.1 /usr/local/sonar-scanner"))
+	err, _, _, _ = executeCommand(makeArgsFromString("ln -s /usr/local/sonar-scanner-2.8 /usr/local/sonar-scanner"))
 	if err != nil {
 		return err
 	}
@@ -544,7 +582,7 @@ func SonarActionInstall(parent interface{}) error {
 		return err
 	}
 
-	data2_2_tmp, err := data.Asset("cisetup/src/data/sonar.properties")
+	data2_2_tmp, err := data.Asset("cisetup/src/data/sonar-scanner.properties")
 	if err != nil {
 		return err
 	}
@@ -896,9 +934,9 @@ func ShActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	os.Chdir("shellcheck-0.4.4")
-	
+
 	/*data5, err := data.Asset("cisetup/src/data/shl.patch")
 	if err != nil {
 		return err
@@ -907,27 +945,27 @@ func ShActionInstall(parent interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("patch -p1 < shl.patch"))
 	if err != nil {
 		return err
 	}*/
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("cabal update"))
 	if err != nil {
 		return err
 	}
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("cabal install --force-reinstalls"))
 	if err != nil {
 		return err
 	}
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("mv /root/.cabal/bin/shellcheck /usr/bin/"))
 	if err != nil {
 		return err
 	}
-	
+
 	err, _, _, _ = executeCommand(makeArgsFromString("rpm -e epel-release"))
 	if err != nil {
 		return err
@@ -996,7 +1034,7 @@ func CiActionInstall(parent interface{}) error {
 		return err
 	}
 	this.SetParam("success", "ciserver_st")
-	
+
 	data3_3, err := data.Asset("cisetup/src/data/config")
 	if err != nil {
 		return err
@@ -1048,7 +1086,7 @@ func main() {
 		var rnr runner.CiRunner
 		var srv server.CiServer
 		if err := srv.PreRun("/etc/citool.ini"); err != nil {
-		    logger.LogString(err.Error())
+			logger.LogString(err.Error())
 			fmt.Println(err)
 			os.Exit(255)
 		}
@@ -1056,11 +1094,11 @@ func main() {
 		defer rnr.KillSelfRun()
 		if err == nil {
 			if err := srv.Run(11000, "/etc/citool.ini"); err != nil {
-			    logger.LogString(err.Error())
+				logger.LogString(err.Error())
 				fmt.Println(err)
 			}
 		} else {
-		    logger.LogString(err.Error())
+			logger.LogString(err.Error())
 			fmt.Println(err)
 		}
 		os.Exit(0)
@@ -1071,7 +1109,7 @@ func main() {
 		rnr.SetRunners(int64(jobRunner))
 		err := rnr.Run("/etc/citool.ini")
 		if err != nil {
-		    logger.LogString(err.Error())
+			logger.LogString(err.Error())
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
@@ -1083,7 +1121,7 @@ func main() {
 		var ex executor.CiExec
 		err := ex.Run(int(taskRunner), "/etc/citool.ini")
 		if err != nil {
-		    logger.LogString(err.Error())
+			logger.LogString(err.Error())
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
@@ -1098,27 +1136,59 @@ func main() {
 
 		actionsList := []*ActionSaver{}
 		result := welcomeMessage()
+		res := 0
 		switch result {
 		case 1:
-			actionsList = append(actionsList, MakeActionSaver("Initial packages list installation", CheckFirstPackageSet, RemoveFirstpackageSet))
-			actionsList = append(actionsList, MakeActionSaver("Install Java 8 and Jenkins", JenkinsActionInstall, JenkinsActionDelete))
-			actionsList = append(actionsList, MakeActionSaver("Install SonarQube", SonarActionInstall, SonarActionDelete))
-			actionsList = append(actionsList, MakeActionSaver("Install BayZR", BayZRActionInstall, BayZRActionDelete))
-			actionsList = append(actionsList, MakeActionSaver("Install SonarQube plugins", PluginActionInstall, PluginActionDelete))
-			actionsList = append(actionsList, MakeActionSaver("Install Squid and YumBootsTrap plugins", SquidActionInstall, SquidActionDelete))
-			actionsList = append(actionsList, MakeActionSaver("Install Shellcheck", ShActionInstall, ShActionDelete))
-			actionsList = append(actionsList, MakeActionSaver("Install Ci Server", CiActionInstall, CiActionDelete))
+			res = welcomeMessageCont()
+			counter := 1
+			if counter > res {
+				actionsList = append(actionsList, MakeActionSaver("Initial packages list installation", CheckFirstPackageSet, RemoveFirstpackageSet))
+			}
+			counter += 1
+			if counter > res {
+				actionsList = append(actionsList, MakeActionSaver("Install Java 8 and Jenkins", JenkinsActionInstall, JenkinsActionDelete))
+			}
+			counter += 1
+			if counter > res {
+				actionsList = append(actionsList, MakeActionSaver("Install SonarQube", SonarActionInstall, SonarActionDelete))
+			}
+			counter += 1
+			if counter > res {
+				actionsList = append(actionsList, MakeActionSaver("Install BayZR", BayZRActionInstall, BayZRActionDelete))
+			}
+			counter += 1
+			if counter > res {
+				actionsList = append(actionsList, MakeActionSaver("Install SonarQube plugins", PluginActionInstall, PluginActionDelete))
+			}
+			counter += 1
+			if counter > res {
+				actionsList = append(actionsList, MakeActionSaver("Install Squid and YumBootsTrap plugins", SquidActionInstall, SquidActionDelete))
+			}
+			counter += 1
+			if counter > res {
+				actionsList = append(actionsList, MakeActionSaver("Install Shellcheck", ShActionInstall, ShActionDelete))
+			}
+			counter += 1
+			if counter > res {
+				actionsList = append(actionsList, MakeActionSaver("Install Ci Server", CiActionInstall, CiActionDelete))
+			}
+			counter += 1
 			break
 		case 2:
 			break
 		case 3:
 			break
 		}
+		cnt := 1
 		for _, action := range actionsList {
+			fmt.Printf("Stage %d\n", cnt-res)
+			cnt += 1
 			if err := action.Activate(); err != nil {
-				fmt.Println("==================================================It is looks like error happened==========================================================")
-				for i := len(actionsList) - 1; i >= 0; i-- {
-					actionsList[i].Deactivate()
+				if yesOrNot("Should to delete changes (y/n):") == 1 {
+					fmt.Println("==================================================It is looks like error happened==========================================================")
+					for i := len(actionsList) - 1; i >= 0; i-- {
+						actionsList[i].Deactivate()
+					}
 				}
 				break
 			}
