@@ -2,10 +2,10 @@ BayZR - утилита позволяющая собирать данные ст
 
 BayZR прежде чем запустить анализатор кода пытается найти с какими параметрами собирается каждый файл проекта, и после этого в формате, понятном для конкретного анализатора кода, передает собранные параметры по каждому файлу.
 
-http://bayrepo.net/doku.php?id=ru:bayzrdscr
+https://putey.net/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
 
 Пример использования:
-http://bayrepo.net/doku.php?id=ru:bayzrci
+https://putey.net/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
 
 В статье выше приводится пример развертывания системы для статического анализа кода. Систсема будет состоять из таких компонент:
 
@@ -22,4 +22,4 @@ yumbootstrap
 комплексный анализ проекта включающего различные языки программирования. Например: си в качестве бакэнда и python в качестве фронтэнда или в качестве утилит командной строки, а так же содержащий шелл скрипты
 организация дополнительной проверки в системе review
 
-Больше информации: http://bayrepo.net/
+Больше информации: https://putey.net/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
