@@ -23,3 +23,5 @@ yumbootstrap
 организация дополнительной проверки в системе review
 
 Больше информации: https://putey.net/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
+
+Все!
