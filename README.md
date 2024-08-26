@@ -2,10 +2,10 @@ BayZR - утилита позволяющая собирать данные ст
 
 BayZR прежде чем запустить анализатор кода пытается найти с какими параметрами собирается каждый файл проекта, и после этого в формате, понятном для конкретного анализатора кода, передает собранные параметры по каждому файлу.
 
-https://putey.net/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
+https://brepo.ru/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
 
 Пример использования:
-https://putey.net/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
+https://brepo.ru/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
 
 В статье выше приводится пример развертывания системы для статического анализа кода. Систсема будет состоять из таких компонент:
 
