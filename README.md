@@ -22,6 +22,6 @@ yumbootstrap
 комплексный анализ проекта включающего различные языки программирования. Например: си в качестве бакэнда и python в качестве фронтэнда или в качестве утилит командной строки, а так же содержащий шелл скрипты
 организация дополнительной проверки в системе review
 
-Больше информации: https://putey.net/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
+Больше информации: https://brepo.ru/post/bayzr-sredstvo-kompleksnogo-staticheskogo-analiza-koda-c-c
 
 Все!
